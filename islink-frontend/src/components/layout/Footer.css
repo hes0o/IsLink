@@ -67,12 +67,13 @@
 .footer-logo {
   display: flex;
   align-items: center;
-  gap: var(--spacing-xs);
+  gap: var(--spacing-sm);
   text-decoration: none;
 }
 
-.footer-logo .logo-icon {
-  font-size: 1.5rem;
+.footer-logo-icon {
+  width: 32px;
+  height: 32px;
 }
 
 .footer-logo .logo-text {
@@ -107,6 +108,7 @@
 
 .footer-social a:hover {
   background: var(--primary-color);
+  transform: translateY(-2px);
 }
 
 .footer-social svg {

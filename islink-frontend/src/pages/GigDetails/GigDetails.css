@@ -1,7 +1,7 @@
 /* Gig Details Page Styles */
 
 .gig-details-page {
-  background: var(--bg-light);
+  background: var(--bg-soft);
   min-height: 100vh;
 }
 

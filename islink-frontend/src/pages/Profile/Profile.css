@@ -1,7 +1,7 @@
 /* Profile Page Styles */
 
 .profile-page {
-  background: var(--bg-light);
+  background: var(--bg-soft);
   min-height: 100vh;
   padding: var(--spacing-xl) 0;
 }

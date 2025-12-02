@@ -105,7 +105,19 @@ function Register() {
         <div className="auth-branding register-branding">
           <div className="branding-content">
             <Link to="/" className="auth-logo">
-              <span className="logo-icon">🔗</span>
+              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="auth-logo-icon">
+                <rect width="40" height="40" rx="10" fill="url(#authLogoGrad2)"/>
+                <path d="M12 20C12 16 14 14 18 14C20 14 21.5 15 22 16" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                <path d="M28 20C28 24 26 26 22 26C20 26 18.5 25 18 24" stroke="white" strokeWidth="2.5" strokeLinecap="round"/>
+                <circle cx="18" cy="14" r="2" fill="white"/>
+                <circle cx="22" cy="26" r="2" fill="white"/>
+                <defs>
+                  <linearGradient id="authLogoGrad2" x1="0" y1="0" x2="40" y2="40">
+                    <stop stopColor="#1dbf73"/>
+                    <stop offset="1" stopColor="#14a35d"/>
+                  </linearGradient>
+                </defs>
+              </svg>
               <span className="logo-text">IsLink</span>
             </Link>
             <h1>Join IsLink Today</h1>

@@ -61,8 +61,9 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-.auth-logo .logo-icon {
-  font-size: 2rem;
+.auth-logo-icon {
+  width: 44px;
+  height: 44px;
 }
 
 .auth-logo .logo-text {
