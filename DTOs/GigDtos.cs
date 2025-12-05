@@ -14,6 +14,17 @@ namespace FreelancerPlatform.DTOs
 
         public string? Description { get; set; }
 
+
+        // The question the freelancer asks the client (e.g., "Send me your logo").
+        public string? Requirements { get; set; }
+
+        // List of search tags (e.g., ["Logo", "Design", "Minimalist"]).
+        public List<string> Tags { get; set; } = new List<string>();
+
+        // List of image URLs for the gallery.
+        // Note: Usually images are uploaded to an endpoint first, which returns URLs.
+        public List<string> ImageUrls { get; set; } = new List<string>();
+
         // A Gig must have at least one pricing package.
         public List<CreateGigPackageDto> Packages { get; set; } = new List<CreateGigPackageDto>();
     }
@@ -46,6 +57,18 @@ namespace FreelancerPlatform.DTOs
         public string? FreelancerAvatar { get; set; }
 
         public double AverageRating { get; set; }
+
+        // --- New Fields for Displaying Data ---
+
+        public string? Requirements { get; set; }
+
+        // List of gallery image URLs.
+        public List<string> Images { get; set; } = new List<string>();
+
+        // List of tag names.
+        public List<string> Tags { get; set; } = new List<string>();
+
+        // --------------------------------------
 
         public List<GigPackageDto> Packages { get; set; } = new List<GigPackageDto>();
     }

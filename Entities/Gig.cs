@@ -27,13 +27,26 @@ namespace FreelancerPlatform.Entities
         // Status of the Gig (Draft, Active, Paused).
         public GigStatus Status { get; set; } = GigStatus.Draft;
 
+        // --- Fiverr Features Updates ---
+
+        // The question/requirements the freelancer asks the client to start the order.
+        public string? Requirements { get; set; }
+
         // Calculated fields for ratings.
         public double AverageRating { get; set; }
         public int RatingCount { get; set; }
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        // --- Relationships ---
+
         // A Gig can have different pricing tiers (Packages).
         public ICollection<GigPackage> Packages { get; set; } = new List<GigPackage>();
+
+        // Collection of images (Gallery) for the Gig.
+        public ICollection<GigImage> Images { get; set; } = new List<GigImage>();
+
+        // Search tags associated with the Gig for better visibility.
+        public ICollection<Tag> Tags { get; set; } = new List<Tag>();
     }
 }
