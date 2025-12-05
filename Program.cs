@@ -7,6 +7,10 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAutoMapper(typeof(Program));
+builder.Services.AddAutoMapper(typeof(Program));
+
+// Add this line to register the Repository 
+builder.Services.AddScoped<FreelancerPlatform.Repositories.Interfaces.IGigRepository, FreelancerPlatform.Repositories.GigRepository>();
 
 var app = builder.Build();
 
