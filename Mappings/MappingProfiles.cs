@@ -77,7 +77,14 @@ namespace FreelancerPlatform.Mappings
                         CreateMap<UpdateProfileDto, Profile>()
                             .ForMember(dest => dest.Skills, opt => opt.Ignore());
 
+                            // Category
+                        CreateMap<Category, CategoryDto>();
+
+                        // Notification
+                        CreateMap<Notification, NotificationDto>();
+
 
         }
     }
 }
+
