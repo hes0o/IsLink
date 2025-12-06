@@ -1,7 +1,6 @@
 ﻿using FreelancerPlatform.Entities;
 using FreelancerPlatform.DTOs;
 using FreelancerPlatform.Entities.Enums;
-// We do NOT add "using AutoMapper;" here to avoid the Profile ambiguity error.
 
 namespace FreelancerPlatform.Mappings
 {
@@ -40,15 +39,40 @@ namespace FreelancerPlatform.Mappings
 
             CreateMap<GigPackage, GigPackageDto>();
 
-            // =======================================================
             // Order Mappings
-            // =======================================================
             CreateMap<Order, OrderDto>()
                 .ForMember(dest => dest.GigTitle, opt => opt.MapFrom(src => src.Gig.Title))
                 .ForMember(dest => dest.ClientName, opt => opt.MapFrom(src => src.Client.Profile != null ? src.Client.Profile.DisplayName : src.Client.Email))
                 .ForMember(dest => dest.FreelancerName, opt => opt.MapFrom(src => src.Freelancer.Profile != null ? src.Freelancer.Profile.DisplayName : src.Freelancer.Email));
 
-            // If your teammate added Chat/Message mappings, add them here inside this bracket.
+            // --- Search Mappings ---
+            CreateMap<Gig, GigSearchResultDto>()
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+                .ForMember(dest => dest.FreelancerName, opt => opt.MapFrom(src => src.Freelancer.Profile != null ? src.Freelancer.Profile.DisplayName : "Unknown"))
+                .ForMember(dest => dest.FreelancerAvatar, opt => opt.MapFrom(src => src.Freelancer.Profile != null ? src.Freelancer.Profile.AvatarUrl : null))
+                // Logic: PriceFrom is the cheapest package price
+                .ForMember(dest => dest.PriceFrom, opt => opt.MapFrom(src => src.Packages.Any() ? src.Packages.Min(p => p.Price) : 0))
+                .ForMember(dest => dest.Rating, opt => opt.MapFrom(src => src.AverageRating))
+                // Logic: CoverImageUrl is the first image in the gallery
+                .ForMember(dest => dest.CoverImageUrl, opt => opt.MapFrom(src => src.Images.Any() ? src.Images.First().ImageUrl : null));
+
+
+            // --- Chat / Message Mappings ---
+
+            // 1. Create Message (DTO -> Entity)
+            CreateMap<CreateMessageDto, Message>();
+
+            // 2. Read Message (Entity -> DTO)
+            CreateMap<Message, MessageDto>()
+                .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src =>
+                    src.Sender.Profile != null ? src.Sender.Profile.DisplayName : src.Sender.Email));
+
+            // 3. Read Conversations (Entity -> DTO)
+            CreateMap<Conversation, ConversationDto>()
+                // Map the list of User entities to a list of names (Strings)
+                .ForMember(dest => dest.Participants, opt => opt.MapFrom(src =>
+                    src.Participants.Select(p =>
+                        p.User.Profile != null ? p.User.Profile.DisplayName : p.User.Email).ToList()));
         }
     }
 }

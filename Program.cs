@@ -36,7 +36,9 @@ builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 builder.Services.AddScoped<IProfileRepository, ProfileRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
-
+// Register the Search Repository
+builder.Services.AddScoped<FreelancerPlatform.Repositories.Interfaces.ISearchRepository
+    , FreelancerPlatform.Repositories.SearchRepository>();
 // TODO: Add other repositories (Orders, Reviews, Messages) as you will see later
 
 // JWT Auth
