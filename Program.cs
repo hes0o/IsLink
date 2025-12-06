@@ -8,6 +8,9 @@ using FreelancerPlatform.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using FreelancerPlatform.Repositories;
+using FreelancerPlatform.Repositories.Interfaces;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
