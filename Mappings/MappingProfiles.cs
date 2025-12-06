@@ -70,21 +70,22 @@ namespace FreelancerPlatform.Mappings
                         ? src.Sender.Profile.DisplayName
                         : src.Sender.Email));
 
-                        CreateMap<Profile, ProfileDto>()
-                            .ForMember(dest => dest.Skills, opt => 
-                                opt.MapFrom(src => src.Skills.Select(s => s.Name)));
+            CreateMap<Profile, ProfileDto>()
+                 .ForMember(dest => dest.Skills, opt => 
+                     opt.MapFrom(src => src.Skills.Select(s => s.Name)));
 
-                        CreateMap<UpdateProfileDto, Profile>()
-                            .ForMember(dest => dest.Skills, opt => opt.Ignore());
+            CreateMap<UpdateProfileDto, Profile>()
+                .ForMember(dest => dest.Skills, opt => opt.Ignore());
 
-                            // Category
-                        CreateMap<Category, CategoryDto>();
+              // Category
+             CreateMap<Category, CategoryDto>();
 
-                        // Notification
-                        CreateMap<Notification, NotificationDto>();
+              // Notification
+             CreateMap<Notification, NotificationDto>();
 
 
         }
     }
 }
+
 
