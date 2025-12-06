@@ -1,0 +1,7 @@
+public class ProfileDto
+{
+    public int Id { get; set; }
+    public string Bio { get; set; } = string.Empty;
+    public string? AvatarUrl { get; set; }
+    public List<string> Skills { get; set; } = new();
+}
