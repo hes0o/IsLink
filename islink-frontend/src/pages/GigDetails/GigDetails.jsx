@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context';
 import { gigs, reviews, categories } from '../../data/mockData';
 import './GigDetails.css';
 
 function GigDetails() {
   const { slug } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [selectedPackage, setSelectedPackage] = useState('basic');
   const [currentImage, setCurrentImage] = useState(0);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
 
   // Find the gig
   const gig = gigs.find(g => g.slug === slug) || gigs[0];
@@ -290,7 +294,16 @@ function GigDetails() {
                     ))}
                   </ul>
 
-                  <button className="btn-order">
+                  <button 
+                    className="btn-order"
+                    onClick={() => {
+                      if (!isAuthenticated) {
+                        navigate('/auth/login');
+                      } else {
+                        alert(`Order placed for ${selectedPkg.name} package ($${selectedPkg.price})!\n\nThis will work when the database is connected.`);
+                      }
+                    }}
+                  >
                     Continue (${selectedPkg.price})
                   </button>
 
@@ -319,12 +332,38 @@ function GigDetails() {
         <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <button className="modal-close" onClick={() => setShowContactModal(false)}>×</button>
-            <h3>Contact {gig.seller?.username}</h3>
-            <textarea 
-              placeholder="Hi! I'm interested in your service. I would like to discuss..."
-              rows={5}
-            ></textarea>
-            <button className="btn-send">Send Message</button>
+            {isAuthenticated ? (
+              <>
+                <h3>Contact {gig.seller?.username}</h3>
+                <textarea 
+                  placeholder="Hi! I'm interested in your service. I would like to discuss..."
+                  rows={5}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                ></textarea>
+                <button 
+                  className="btn-send"
+                  onClick={() => {
+                    alert('Message sent! (This will work when the database is connected)');
+                    setShowContactModal(false);
+                    setContactMessage('');
+                    navigate('/messages');
+                  }}
+                  disabled={!contactMessage.trim()}
+                >
+                  Send Message
+                </button>
+              </>
+            ) : (
+              <>
+                <h3>Please Log In</h3>
+                <p className="modal-text">You need to be logged in to contact sellers.</p>
+                <div className="modal-actions">
+                  <Link to="/auth/login" className="btn-send">Sign In</Link>
+                  <Link to="/auth/register" className="btn-secondary">Create Account</Link>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context';
 import { users, gigs, reviews } from '../../data/mockData';
 import GigCard from '../../components/gig/GigCard';
 import './Profile.css';
 
 function Profile() {
   const { username } = useParams();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [activeTab, setActiveTab] = useState('gigs');
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactMessage, setContactMessage] = useState('');
 
   // Find user - fallback to first user for demo
   const user = users.find(u => u.username === username) || users[0];
@@ -57,7 +62,12 @@ function Profile() {
 
               {/* Actions */}
               <div className="profile-actions">
-                <button className="btn-contact-profile">Contact Me</button>
+                <button 
+                  className="btn-contact-profile"
+                  onClick={() => setShowContactModal(true)}
+                >
+                  Contact Me
+                </button>
               </div>
 
               {/* Info */}
@@ -239,6 +249,47 @@ function Profile() {
           </main>
         </div>
       </div>
+
+      {/* Contact Modal */}
+      {showContactModal && (
+        <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowContactModal(false)}>×</button>
+            {isAuthenticated ? (
+              <>
+                <h3>Contact {user.username}</h3>
+                <textarea 
+                  placeholder="Hi! I would like to discuss a project with you..."
+                  rows={5}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                ></textarea>
+                <button 
+                  className="btn-send"
+                  onClick={() => {
+                    alert('Message sent! (This will work when the database is connected)');
+                    setShowContactModal(false);
+                    setContactMessage('');
+                    navigate('/messages');
+                  }}
+                  disabled={!contactMessage.trim()}
+                >
+                  Send Message
+                </button>
+              </>
+            ) : (
+              <>
+                <h3>Please Log In</h3>
+                <p className="modal-text">You need to be logged in to contact sellers.</p>
+                <div className="modal-actions">
+                  <Link to="/auth/login" className="btn-send">Sign In</Link>
+                  <Link to="/auth/register" className="btn-secondary">Create Account</Link>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,17 +1,26 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context';
 import './Header.css';
 
 function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const navigate = useNavigate();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/gigs?search=${encodeURIComponent(searchQuery)}`);
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    setShowUserMenu(false);
+    navigate('/');
   };
 
   return (
@@ -56,10 +65,76 @@ function Header() {
         {/* Navigation */}
         <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>
           <Link to="/gigs" className="nav-link">Explore</Link>
-          <Link to="/gigs" className="nav-link">Become a Seller</Link>
-          <div className="nav-divider"></div>
-          <Link to="/auth/login" className="nav-link">Sign In</Link>
-          <Link to="/auth/register" className="btn btn-primary">Join</Link>
+          
+          {isAuthenticated ? (
+            <>
+              <Link to="/dashboard" className="nav-link">Dashboard</Link>
+              <Link to="/messages" className="nav-link">Messages</Link>
+              
+              {/* User Menu */}
+              <div className="user-menu-container">
+                <button 
+                  className="user-menu-trigger"
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                >
+                  <img 
+                    src={user?.avatarUrl || 'https://via.placeholder.com/40?text=U'} 
+                    alt={user?.username}
+                    className="user-avatar"
+                  />
+                  <span className="user-name">{user?.username}</span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="dropdown-icon">
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+                
+                {showUserMenu && (
+                  <div className="user-dropdown">
+                    <Link to={`/profile/${user?.username}`} onClick={() => setShowUserMenu(false)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      Profile
+                    </Link>
+                    <Link to="/dashboard" onClick={() => setShowUserMenu(false)}>
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                      </svg>
+                      Dashboard
+                    </Link>
+                    {user?.role === 'seller' && (
+                      <Link to="/dashboard?tab=gigs" onClick={() => setShowUserMenu(false)}>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                        </svg>
+                        My Gigs
+                      </Link>
+                    )}
+                    <div className="dropdown-divider"></div>
+                    <button onClick={handleLogout} className="logout-btn">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Link to="/gigs" className="nav-link">Become a Seller</Link>
+              <div className="nav-divider"></div>
+              <Link to="/auth/login" className="nav-link">Sign In</Link>
+              <Link to="/auth/register" className="btn btn-primary">Join</Link>
+            </>
+          )}
         </nav>
 
         {/* Mobile Menu Toggle */}

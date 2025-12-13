@@ -477,6 +477,124 @@
 }
 
 /* Responsive */
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--spacing-lg);
+}
+
+.modal {
+  background: var(--bg-white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-xl);
+  width: 100%;
+  max-width: 500px;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: var(--bg-light);
+  border-radius: var(--radius-full);
+  font-size: 1.5rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal h3 {
+  font-size: var(--font-size-xl);
+  margin-bottom: var(--spacing-lg);
+  padding-right: var(--spacing-xl);
+}
+
+.modal textarea {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-family: inherit;
+  resize: vertical;
+  margin-bottom: var(--spacing-md);
+  outline: none;
+}
+
+.modal textarea:focus {
+  border-color: var(--primary-color);
+}
+
+.btn-send {
+  width: 100%;
+  padding: var(--spacing-md);
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  display: block;
+}
+
+.btn-send:hover:not(:disabled) {
+  background: var(--primary-dark);
+}
+
+.btn-send:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.modal-text {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.modal-actions .btn-send {
+  flex: 1;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: var(--spacing-md);
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+
+/* Responsive */
 @media (max-width: 1024px) {
   .profile-layout {
     grid-template-columns: 1fr;

@@ -747,8 +747,48 @@
   cursor: pointer;
 }
 
-.btn-send:hover {
+.btn-send:hover:not(:disabled) {
   background: var(--primary-dark);
+}
+
+.btn-send:disabled {
+  background: #d1d5db;
+  cursor: not-allowed;
+}
+
+.modal-text {
+  color: var(--text-secondary);
+  margin-bottom: var(--spacing-lg);
+}
+
+.modal-actions {
+  display: flex;
+  gap: var(--spacing-md);
+}
+
+.modal-actions .btn-send {
+  flex: 1;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-secondary {
+  flex: 1;
+  padding: var(--spacing-md);
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
 }
 
 /* Responsive */

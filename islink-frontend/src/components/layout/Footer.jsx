@@ -2,6 +2,12 @@ import { Link } from 'react-router-dom';
 import './Footer.css';
 
 function Footer() {
+  // For pages that don't exist yet, show alert
+  const handlePlaceholderClick = (e, pageName) => {
+    e.preventDefault();
+    alert(`"${pageName}" page coming soon!`);
+  };
+
   return (
     <footer className="footer">
       <div className="footer-container">
@@ -23,11 +29,11 @@ function Footer() {
           <div className="footer-section">
             <h4>About</h4>
             <ul>
-              <li><Link to="/about">About IsLink</Link></li>
-              <li><Link to="/careers">Careers</Link></li>
-              <li><Link to="/press">Press & News</Link></li>
-              <li><Link to="/partnerships">Partnerships</Link></li>
-              <li><Link to="/privacy">Privacy Policy</Link></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'About IsLink')}>About IsLink</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Careers')}>Careers</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Press & News')}>Press & News</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Partnerships')}>Partnerships</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Privacy Policy')}>Privacy Policy</a></li>
             </ul>
           </div>
 
@@ -35,11 +41,11 @@ function Footer() {
           <div className="footer-section">
             <h4>Support</h4>
             <ul>
-              <li><Link to="/help">Help & Support</Link></li>
-              <li><Link to="/trust">Trust & Safety</Link></li>
-              <li><Link to="/selling">Selling on IsLink</Link></li>
-              <li><Link to="/buying">Buying on IsLink</Link></li>
-              <li><Link to="/contact">Contact Us</Link></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Help & Support')}>Help & Support</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Trust & Safety')}>Trust & Safety</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Selling on IsLink')}>Selling on IsLink</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Buying on IsLink')}>Buying on IsLink</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Contact Us')}>Contact Us</a></li>
             </ul>
           </div>
 
@@ -47,11 +53,11 @@ function Footer() {
           <div className="footer-section">
             <h4>Community</h4>
             <ul>
-              <li><Link to="/events">Events</Link></li>
-              <li><Link to="/blog">Blog</Link></li>
-              <li><Link to="/forum">Forum</Link></li>
-              <li><Link to="/podcast">Podcast</Link></li>
-              <li><Link to="/affiliates">Affiliates</Link></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Events')}>Events</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Blog')}>Blog</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Forum')}>Forum</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Podcast')}>Podcast</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'Affiliates')}>Affiliates</a></li>
             </ul>
           </div>
 
@@ -59,11 +65,11 @@ function Footer() {
           <div className="footer-section">
             <h4>More From IsLink</h4>
             <ul>
-              <li><Link to="/business">IsLink Business</Link></li>
-              <li><Link to="/pro">IsLink Pro</Link></li>
-              <li><Link to="/studios">IsLink Studios</Link></li>
-              <li><Link to="/guides">IsLink Guides</Link></li>
-              <li><Link to="/workspace">IsLink Workspace</Link></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'IsLink Business')}>IsLink Business</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'IsLink Pro')}>IsLink Pro</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'IsLink Studios')}>IsLink Studios</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'IsLink Guides')}>IsLink Guides</a></li>
+              <li><a href="#" onClick={(e) => handlePlaceholderClick(e, 'IsLink Workspace')}>IsLink Workspace</a></li>
             </ul>
           </div>
         </div>
@@ -120,7 +126,7 @@ function Footer() {
               <option value="fr">Français</option>
               <option value="es">Español</option>
             </select>
-            <span className="currency">$ USD</span>
+            <span className="currency">S£ SYP</span>
           </div>
         </div>
       </div>
