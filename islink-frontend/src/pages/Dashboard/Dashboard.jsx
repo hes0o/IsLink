@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context';
-import { ordersAPI } from '../../services/api';
-import { gigs as mockGigs } from '../../data/mockData';
+import { ordersAPI, gigsAPI } from '../../services/api';
 import './Dashboard.css';
 
 function Dashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('overview');
   const [orders, setOrders] = useState([]);
+  const [myGigs, setMyGigs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [stats, setStats] = useState({
     totalEarnings: 0,
     activeOrders: 0,
@@ -18,35 +19,80 @@ function Dashboard() {
   });
 
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (user) {
+      loadDashboardData();
+    }
+  }, [user]);
 
   const loadDashboardData = async () => {
+    setIsLoading(true);
+    setError(null);
+    
     try {
-      // Try to fetch from API, fallback to mock data
-      const response = await ordersAPI.getAll();
-      if (response.success) {
-        setOrders(response.orders);
-      }
-    } catch (error) {
-      console.log('Using mock data for dashboard');
-      // Use mock data for demo
+      // Fetch orders - backend returns { success: true, data: [...] }
+      const ordersResponse = await ordersAPI.getAll({ role: user?.role === 'seller' ? 'seller' : 'buyer' });
+      const ordersList = ordersResponse?.Data || ordersResponse?.data || [];
+      
+      // Transform orders for display
+      const formattedOrders = ordersList.map(order => ({
+        id: order.id || order.Id,
+        orderNumber: order.orderNumber || order.OrderNumber,
+        gigTitle: order.gig?.title || order.Gig?.Title || 'Service Order',
+        buyer: order.buyer?.username || order.Buyer?.Username || 'Buyer',
+        seller: order.seller?.username || order.Seller?.Username || 'Seller',
+        status: order.status || order.Status || 'pending',
+        price: order.totalPrice || order.TotalPrice || 0,
+        dueDate: order.deliveryDeadline ? new Date(order.deliveryDeadline).toLocaleDateString() : 'N/A'
+      }));
+      
+      setOrders(formattedOrders);
+
+      // Calculate stats from orders
+      const activeOrders = formattedOrders.filter(o => 
+        o.status === 'pending' || o.status === 'in_progress'
+      ).length;
+      const completedOrders = formattedOrders.filter(o => o.status === 'completed').length;
+      const totalEarnings = formattedOrders
+        .filter(o => o.status === 'completed')
+        .reduce((sum, o) => sum + (o.price || 0), 0);
+
+      setStats({
+        totalEarnings: user?.balance || totalEarnings,
+        activeOrders,
+        completedOrders,
+        totalGigs: myGigs.length
+      });
+
+    } catch (err) {
+      console.error('Error loading dashboard data:', err);
+      // Set default mock data for demo
       setOrders([
-        { id: 1, gigTitle: 'Logo Design', buyer: 'john_doe', status: 'in_progress', price: 50, dueDate: '2024-12-20' },
-        { id: 2, gigTitle: 'Website Development', buyer: 'jane_smith', status: 'pending', price: 200, dueDate: '2024-12-25' },
-        { id: 3, gigTitle: 'SEO Optimization', buyer: 'mike_wilson', status: 'completed', price: 100, dueDate: '2024-12-10' },
+        { id: 1, orderNumber: 'ORD-001', gigTitle: 'Logo Design', buyer: 'john_doe', seller: user?.username, status: 'in_progress', price: 50, dueDate: '2024-12-20' },
+        { id: 2, orderNumber: 'ORD-002', gigTitle: 'Website Development', buyer: 'jane_smith', seller: user?.username, status: 'pending', price: 200, dueDate: '2024-12-25' },
+        { id: 3, orderNumber: 'ORD-003', gigTitle: 'SEO Optimization', buyer: 'mike_wilson', seller: user?.username, status: 'completed', price: 100, dueDate: '2024-12-10' },
       ]);
-    } finally {
-      setIsLoading(false);
+      setStats({
+        totalEarnings: user?.balance || 2450,
+        activeOrders: 2,
+        completedOrders: 1,
+        totalGigs: 3
+      });
     }
     
-    // Set mock stats
-    setStats({
-      totalEarnings: 2450,
-      activeOrders: 3,
-      completedOrders: 12,
-      totalGigs: 5
-    });
+    // Fetch user's gigs if seller
+    if (user?.role === 'seller') {
+      try {
+        const gigsResponse = await gigsAPI.getBySeller(user.username);
+        const gigsList = gigsResponse?.Data || gigsResponse?.data || gigsResponse || [];
+        setMyGigs(Array.isArray(gigsList) ? gigsList : []);
+        setStats(prev => ({ ...prev, totalGigs: Array.isArray(gigsList) ? gigsList.length : 0 }));
+      } catch (err) {
+        console.log('Could not load gigs:', err);
+        setMyGigs([]);
+      }
+    }
+    
+    setIsLoading(false);
   };
 
   const getStatusBadge = (status) => {
@@ -60,7 +106,17 @@ function Dashboard() {
     return <span className={`status-badge ${className}`}>{label}</span>;
   };
 
-  const myGigs = mockGigs.slice(0, 3);
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="dashboard-page">
+        <div className="dashboard-loading">
+          <div className="spinner"></div>
+          <p>Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-page">
@@ -268,25 +324,38 @@ function Dashboard() {
                 <Link to="/gigs/create" className="btn-primary">+ Create New Gig</Link>
               </div>
               
-              <div className="gigs-grid">
-                {myGigs.map(gig => (
-                  <div key={gig.id} className="gig-card-mini">
-                    <img src={gig.images?.[0] || 'https://via.placeholder.com/300x200'} alt={gig.title} />
-                    <div className="gig-card-content">
-                      <h3>{gig.title}</h3>
-                      <div className="gig-stats">
-                        <span>⭐ {gig.rating || 5.0}</span>
-                        <span>📦 {gig.orderCount || 0} orders</span>
+              {myGigs.length === 0 ? (
+                <div className="empty-state">
+                  <p>You haven't created any gigs yet.</p>
+                  <Link to="/gigs/create" className="btn-primary">Create Your First Gig</Link>
+                </div>
+              ) : (
+                <div className="gigs-grid">
+                  {myGigs.map(gig => {
+                    const gigImage = gig.images?.[0]?.imageUrl || gig.Images?.[0]?.ImageUrl || 'https://via.placeholder.com/300x200';
+                    const basicPackage = gig.packages?.find(p => p.packageType === 'basic') || gig.Packages?.find(p => p.PackageType === 'basic');
+                    const price = basicPackage?.price || basicPackage?.Price || 25;
+                    
+                    return (
+                      <div key={gig.id || gig.Id} className="gig-card-mini">
+                        <img src={gigImage} alt={gig.title || gig.Title} />
+                        <div className="gig-card-content">
+                          <h3>{gig.title || gig.Title}</h3>
+                          <div className="gig-stats">
+                            <span>⭐ {gig.rating || gig.Rating || 5.0}</span>
+                            <span>📦 {gig.ordersInQueue || gig.OrdersInQueue || 0} in queue</span>
+                          </div>
+                          <p className="gig-price">From ${price}</p>
+                          <div className="gig-actions">
+                            <Link to={`/gig/${gig.slug || gig.Slug}`} className="btn-small">View</Link>
+                            <button className="btn-small btn-outline">{gig.isActive || gig.IsActive ? 'Pause' : 'Activate'}</button>
+                          </div>
+                        </div>
                       </div>
-                      <p className="gig-price">From ${gig.packages?.basic?.price || 25}</p>
-                      <div className="gig-actions">
-                        <button className="btn-small">Edit</button>
-                        <button className="btn-small btn-outline">Pause</button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </>
           )}
 
