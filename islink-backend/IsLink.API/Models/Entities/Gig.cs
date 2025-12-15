@@ -61,5 +61,6 @@ public class Gig
     public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
     public virtual ICollection<Favorite> Favorites { get; set; } = new List<Favorite>();
+    
 }
 

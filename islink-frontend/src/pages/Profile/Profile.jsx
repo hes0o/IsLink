@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context';
-import { users, gigs, reviews } from '../../data/mockData';
+import { usersAPI, gigsAPI, reviewsAPI } from '../../services/api';
 import GigCard from '../../components/gig/GigCard';
 import './Profile.css';
 
@@ -12,15 +12,83 @@ function Profile() {
   const [activeTab, setActiveTab] = useState('gigs');
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactMessage, setContactMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [userGigs, setUserGigs] = useState([]);
+  const [userReviews, setUserReviews] = useState([]);
 
-  // Find user - fallback to first user for demo
-  const user = users.find(u => u.username === username) || users[0];
-  
-  // Get user's gigs
-  const userGigs = gigs.filter(g => g.sellerId === user.id);
-  
-  // Get user's reviews
-  const userReviews = reviews.filter(r => r.sellerId === user.id);
+  useEffect(() => {
+    const loadProfileData = async () => {
+      setLoading(true);
+      try {
+        // Fetch user data
+        const userResponse = await usersAPI.getByUsername(username);
+        if (userResponse?.Success && userResponse?.Data) {
+          setUser(userResponse.Data);
+        } else {
+          // User not found
+          setUser(null);
+        }
+
+        // Fetch user's gigs
+        try {
+          const gigsResponse = await gigsAPI.getBySeller(username);
+          const gigsList = gigsResponse?.Data || gigsResponse?.data || gigsResponse || [];
+          setUserGigs(Array.isArray(gigsList) ? gigsList : []);
+        } catch (err) {
+          console.log('Could not load gigs:', err);
+          setUserGigs([]);
+        }
+
+        // Fetch user's reviews
+        try {
+          const reviewsResponse = await reviewsAPI.getBySeller(username);
+          const reviewsData = reviewsResponse?.Data?.Reviews || reviewsResponse?.Data?.reviews || reviewsResponse?.Data || [];
+          setUserReviews(Array.isArray(reviewsData) ? reviewsData : []);
+        } catch (err) {
+          console.log('Could not load reviews:', err);
+          setUserReviews([]);
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (username) {
+      loadProfileData();
+    } else {
+      setLoading(false);
+    }
+  }, [username]);
+
+  if (loading) {
+    return (
+      <div className="profile-page">
+        <div className="container">
+          <div className="loading-state">
+            <div className="spinner"></div>
+            <p>Loading profile...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="profile-page">
+        <div className="container">
+          <div className="error-state">
+            <p>User not found</p>
+            <Link to="/" className="btn-primary">Go Home</Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="profile-page">
@@ -33,28 +101,31 @@ function Profile() {
               <div className="profile-header">
                 <div className="avatar-container">
                   <img 
-                    src={user.avatar} 
-                    alt={user.fullName}
+                    src={user.avatarUrl || user.AvatarUrl || 'https://via.placeholder.com/120?text=U'} 
+                    alt={user.fullName || user.FullName}
                     className="profile-avatar"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/120?text=U';
+                    }}
                   />
-                  {user.isOnline && <span className="online-badge"></span>}
+                  {(user.isOnline || user.IsOnline) && <span className="online-badge"></span>}
                 </div>
-                <h1 className="profile-name">{user.fullName}</h1>
-                <p className="profile-username">@{user.username}</p>
+                <h1 className="profile-name">{user.fullName || user.FullName}</h1>
+                <p className="profile-username">@{user.username || user.Username}</p>
                 
                 {/* Rating */}
                 <div className="profile-rating">
                   <span className="star">★</span>
-                  <span className="rating-value">{user.rating}</span>
-                  <span className="rating-count">({user.reviewCount} reviews)</span>
+                  <span className="rating-value">{user.rating || user.Rating || 0}</span>
+                  <span className="rating-count">({user.reviewCount || user.ReviewCount || 0} reviews)</span>
                 </div>
 
                 {/* Badges */}
                 <div className="profile-badges">
-                  {user.rating >= 4.7 && (
+                  {(user.rating || user.Rating || 0) >= 4.7 && (
                     <span className="badge top-rated">⭐ Top Rated</span>
                   )}
-                  {user.completedOrders >= 100 && (
+                  {(user.completedOrders || user.CompletedOrders || 0) >= 100 && (
                     <span className="badge verified">✓ Verified Pro</span>
                   )}
                 </div>
@@ -74,60 +145,66 @@ function Profile() {
               <div className="profile-info">
                 <div className="info-item">
                   <span className="info-label">From</span>
-                  <span className="info-value">{user.country}</span>
+                  <span className="info-value">{user.country || user.Country || 'N/A'}</span>
                 </div>
-                <div className="info-item">
-                  <span className="info-label">Member since</span>
-                  <span className="info-value">
-                    {new Date(user.memberSince).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      year: 'numeric' 
-                    })}
-                  </span>
-                </div>
+                {user.memberSince || user.MemberSince ? (
+                  <div className="info-item">
+                    <span className="info-label">Member since</span>
+                    <span className="info-value">
+                      {new Date(user.memberSince || user.MemberSince).toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        year: 'numeric' 
+                      })}
+                    </span>
+                  </div>
+                ) : null}
                 <div className="info-item">
                   <span className="info-label">Avg. response time</span>
                   <span className="info-value">1 hour</span>
                 </div>
-                <div className="info-item">
-                  <span className="info-label">Last delivery</span>
-                  <span className="info-value">About 2 hours</span>
-                </div>
               </div>
 
               {/* Description */}
-              <div className="profile-description">
-                <h3>Description</h3>
-                <p>{user.bio}</p>
-              </div>
+              {(user.bio || user.Bio) && (
+                <div className="profile-description">
+                  <h3>Description</h3>
+                  <p>{user.bio || user.Bio}</p>
+                </div>
+              )}
 
               {/* Languages */}
-              <div className="profile-languages">
-                <h3>Languages</h3>
-                <ul>
-                  {user.languages.map((lang, idx) => (
-                    <li key={idx}>
-                      <span className="lang-name">{lang.name}</span>
-                      <span className="lang-level">{lang.level}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {((user.languages || user.Languages) && (user.languages || user.Languages).length > 0) && (
+                <div className="profile-languages">
+                  <h3>Languages</h3>
+                  <ul>
+                    {(user.languages || user.Languages || []).map((lang, idx) => (
+                      <li key={idx}>
+                        <span className="lang-name">{lang.name || lang.Name}</span>
+                        <span className="lang-level">{lang.level || lang.Level || lang.Proficiency}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* Skills */}
-              <div className="profile-skills">
-                <h3>Skills</h3>
-                <div className="skills-list">
-                  {user.skills.map((skill, idx) => (
-                    <span key={idx} className="skill-tag">{skill}</span>
-                  ))}
+              {((user.skills || user.Skills) && (user.skills || user.Skills).length > 0) && (
+                <div className="profile-skills">
+                  <h3>Skills</h3>
+                  <div className="skills-list">
+                    {(user.skills || user.Skills || []).map((skill, idx) => (
+                      <span key={idx} className="skill-tag">
+                        {typeof skill === 'string' ? skill : (skill.skillName || skill.SkillName || skill)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Stats */}
               <div className="profile-stats">
                 <div className="stat-box">
-                  <span className="stat-value">{user.completedOrders}</span>
+                  <span className="stat-value">{user.completedOrders || user.CompletedOrders || 0}</span>
                   <span className="stat-label">Orders Completed</span>
                 </div>
                 <div className="stat-box">
@@ -152,7 +229,7 @@ function Profile() {
                 className={`tab ${activeTab === 'reviews' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reviews')}
               >
-                Reviews ({user.reviewCount})
+                Reviews ({user.reviewCount || user.ReviewCount || userReviews.length})
               </button>
             </div>
 
@@ -179,12 +256,12 @@ function Profile() {
                   {/* Reviews Summary */}
                   <div className="reviews-overview">
                     <div className="overall-rating">
-                      <span className="big-rating">{user.rating}</span>
+                      <span className="big-rating">{user.rating || user.Rating || 0}</span>
                       <div className="rating-stars">
-                        {'★'.repeat(Math.round(user.rating))}
-                        {'☆'.repeat(5 - Math.round(user.rating))}
+                        {'★'.repeat(Math.round(user.rating || user.Rating || 0))}
+                        {'☆'.repeat(5 - Math.round(user.rating || user.Rating || 0))}
                       </div>
-                      <span className="total-reviews">{user.reviewCount} reviews</span>
+                      <span className="total-reviews">{user.reviewCount || user.ReviewCount || userReviews.length} reviews</span>
                     </div>
                     <div className="rating-breakdown">
                       <div className="breakdown-row">
@@ -207,41 +284,56 @@ function Profile() {
 
                   {/* Reviews List */}
                   <div className="reviews-list">
-                    {reviews.map(review => (
-                      <div key={review.id} className="review-item">
-                        <div className="review-header">
-                          <img 
-                            src={review.buyerAvatar} 
-                            alt={review.buyerName}
-                            className="reviewer-avatar"
-                          />
-                          <div className="reviewer-info">
-                            <span className="reviewer-name">{review.buyerName}</span>
-                            <span className="reviewer-country">{review.buyerCountry}</span>
-                          </div>
-                          <div className="review-meta">
-                            <div className="review-stars">
-                              {'★'.repeat(review.rating)}
-                              {'☆'.repeat(5 - review.rating)}
+                    {userReviews.length > 0 ? (
+                      userReviews.map((review, idx) => {
+                        const reviewRating = review.rating || review.Rating || 0;
+                        const buyer = review.buyer || review.Buyer || {};
+                        return (
+                          <div key={review.id || review.Id || idx} className="review-item">
+                            <div className="review-header">
+                              <img 
+                                src={buyer.avatarUrl || buyer.AvatarUrl || 'https://via.placeholder.com/40?text=U'} 
+                                alt={buyer.fullName || buyer.FullName || buyer.username || buyer.Username || 'Buyer'}
+                                className="reviewer-avatar"
+                                onError={(e) => {
+                                  e.target.src = 'https://via.placeholder.com/40?text=U';
+                                }}
+                              />
+                              <div className="reviewer-info">
+                                <span className="reviewer-name">{buyer.fullName || buyer.FullName || buyer.username || buyer.Username || 'Buyer'}</span>
+                                {buyer.country || buyer.Country ? (
+                                  <span className="reviewer-country">{buyer.country || buyer.Country}</span>
+                                ) : null}
+                              </div>
+                              <div className="review-meta">
+                                <div className="review-stars">
+                                  {'★'.repeat(reviewRating)}
+                                  {'☆'.repeat(5 - reviewRating)}
+                                </div>
+                                <span className="review-date">
+                                  {new Date(review.createdAt || review.CreatedAt || new Date()).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    year: 'numeric'
+                                  })}
+                                </span>
+                              </div>
                             </div>
-                            <span className="review-date">
-                              {new Date(review.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </span>
+                            <p className="review-text">{review.comment || review.Comment}</p>
+                            {(review.sellerResponse || review.SellerResponse) && (
+                              <div className="seller-response">
+                                <span className="response-label">Seller's Response</span>
+                                <p>{review.sellerResponse || review.SellerResponse}</p>
+                              </div>
+                            )}
                           </div>
-                        </div>
-                        <p className="review-text">{review.comment}</p>
-                        {review.sellerResponse && (
-                          <div className="seller-response">
-                            <span className="response-label">Seller's Response</span>
-                            <p>{review.sellerResponse}</p>
-                          </div>
-                        )}
+                        );
+                      })
+                    ) : (
+                      <div className="empty-state">
+                        <p>No reviews yet.</p>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}
@@ -257,7 +349,7 @@ function Profile() {
             <button className="modal-close" onClick={() => setShowContactModal(false)}>×</button>
             {isAuthenticated ? (
               <>
-                <h3>Contact {user.username}</h3>
+                <h3>Contact {user.username || user.Username}</h3>
                 <textarea 
                   placeholder="Hi! I would like to discuss a project with you..."
                   rows={5}

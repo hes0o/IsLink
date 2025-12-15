@@ -267,6 +267,209 @@ public static class DbSeeder
                 IsOnline = true,
                 IsVerified = true,
                 Balance = 800.00m
+            },
+            // === ADDITIONAL SELLERS ===
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "zain_webdev",
+                Email = "zain@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Zain Al-Din",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/28.jpg",
+                Role = "seller",
+                Country = "Syria",
+                Bio = "Expert WordPress developer specializing in custom themes, plugins, and WooCommerce stores. 6+ years experience building responsive websites.",
+                Rating = 4.8m,
+                ReviewCount = 156,
+                CompletedOrders = 198,
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 3800.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "layla_photo",
+                Email = "layla@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Layla Mahmoud",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/41.jpg",
+                Role = "seller",
+                Country = "Jordan",
+                Bio = "Professional photographer and photo editor. Specializing in product photography, portrait retouching, and lifestyle photography.",
+                Rating = 4.9m,
+                ReviewCount = 112,
+                CompletedOrders = 145,
+                IsOnline = false,
+                IsVerified = true,
+                Balance = 2200.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "youssef_mobile",
+                Email = "youssef@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Youssef Ali",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/61.jpg",
+                Role = "seller",
+                Country = "Lebanon",
+                Bio = "Mobile app developer for iOS and Android. Expert in React Native, Flutter, and native development. Published 20+ apps on app stores.",
+                Rating = 5.0m,
+                ReviewCount = 87,
+                CompletedOrders = 103,
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 4500.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "fatima_voice",
+                Email = "fatima@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Fatima Hussein",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/56.jpg",
+                Role = "seller",
+                Country = "Iraq",
+                Bio = "Professional voice-over artist in Arabic and English. Female voice specialist for commercials, audiobooks, e-learning, and narration.",
+                Rating = 4.9m,
+                ReviewCount = 203,
+                CompletedOrders = 267,
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 3100.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "karim_3d",
+                Email = "karim@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Karim Saleh",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/38.jpg",
+                Role = "seller",
+                Country = "Egypt",
+                Bio = "3D artist and animator. Creating stunning 3D models, animations, and visualizations for games, architecture, and marketing.",
+                Rating = 4.7m,
+                ReviewCount = 94,
+                CompletedOrders = 118,
+                IsOnline = false,
+                IsVerified = true,
+                Balance = 2700.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "hala_data",
+                Email = "hala@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Hala Taha",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/63.jpg",
+                Role = "seller",
+                Country = "Syria",
+                Bio = "Data analyst and visualization expert. Transforming raw data into actionable insights using Python, SQL, Tableau, and Power BI.",
+                Rating = 4.8m,
+                ReviewCount = 71,
+                CompletedOrders = 89,
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 1900.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "bassam_uiux",
+                Email = "bassam@islink.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Bassam Khoury",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/48.jpg",
+                Role = "seller",
+                Country = "Lebanon",
+                Bio = "UI/UX designer creating user-centered designs for web and mobile apps. 7+ years experience with Figma, Sketch, and prototyping.",
+                Rating = 4.9m,
+                ReviewCount = 128,
+                CompletedOrders = 167,
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 3600.00m
+            },
+            // === ADDITIONAL BUYERS ===
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "sophia_ecommerce",
+                Email = "sophia@shop.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Sophia Williams",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/45.jpg",
+                Role = "buyer",
+                Country = "Australia",
+                Bio = "E-commerce store owner looking for professional services to grow my business.",
+                IsOnline = false,
+                IsVerified = true,
+                Balance = 1500.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "james_startup",
+                Email = "james@startup.io",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "James Wilson",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/56.jpg",
+                Role = "buyer",
+                Country = "USA",
+                Bio = "Startup founder seeking talented freelancers to help build innovative products.",
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 2500.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "maria_agency",
+                Email = "maria@agency.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Maria Garcia",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/51.jpg",
+                Role = "buyer",
+                Country = "Mexico",
+                Bio = "Marketing agency owner looking for creative professionals.",
+                IsOnline = true,
+                IsVerified = false,
+                Balance = 900.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "ali_entrepreneur",
+                Email = "ali@business.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Ali Al-Mansouri",
+                AvatarUrl = "https://randomuser.me/api/portraits/men/71.jpg",
+                Role = "buyer",
+                Country = "Saudi Arabia",
+                Bio = "Entrepreneur building multiple online businesses. Always looking for quality services.",
+                IsOnline = false,
+                IsVerified = true,
+                Balance = 4200.00m
+            },
+            new()
+            {
+                Id = Guid.NewGuid(),
+                Username = "luna_creator",
+                Email = "luna@content.com",
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123"),
+                FullName = "Luna Park",
+                AvatarUrl = "https://randomuser.me/api/portraits/women/58.jpg",
+                Role = "buyer",
+                Country = "Japan",
+                Bio = "Content creator and influencer needing professional design and video services.",
+                IsOnline = true,
+                IsVerified = true,
+                Balance = 1100.00m
             }
         };
 
@@ -346,8 +549,72 @@ public static class DbSeeder
             new() { SkillName = "Excel" }
         };
 
-        // Add languages to all users
-        foreach (var user in users.Take(8))
+        // Skills for new sellers (indices 8-14)
+        users[8].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "WordPress" },
+            new() { SkillName = "PHP" },
+            new() { SkillName = "WooCommerce" },
+            new() { SkillName = "CSS" },
+            new() { SkillName = "JavaScript" }
+        };
+
+        users[9].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "Photography" },
+            new() { SkillName = "Photo Editing" },
+            new() { SkillName = "Adobe Photoshop" },
+            new() { SkillName = "Lightroom" },
+            new() { SkillName = "Product Photography" }
+        };
+
+        users[10].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "React Native" },
+            new() { SkillName = "Flutter" },
+            new() { SkillName = "iOS Development" },
+            new() { SkillName = "Android Development" },
+            new() { SkillName = "App Store Optimization" }
+        };
+
+        users[11].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "Voice Over" },
+            new() { SkillName = "Arabic Voice" },
+            new() { SkillName = "English Voice" },
+            new() { SkillName = "Commercial" },
+            new() { SkillName = "Audiobook Narration" }
+        };
+
+        users[12].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "3D Modeling" },
+            new() { SkillName = "Blender" },
+            new() { SkillName = "Maya" },
+            new() { SkillName = "3D Animation" },
+            new() { SkillName = "Texturing" }
+        };
+
+        users[13].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "Data Analysis" },
+            new() { SkillName = "Python" },
+            new() { SkillName = "SQL" },
+            new() { SkillName = "Tableau" },
+            new() { SkillName = "Power BI" }
+        };
+
+        users[14].Skills = new List<UserSkill>
+        {
+            new() { SkillName = "UI Design" },
+            new() { SkillName = "UX Design" },
+            new() { SkillName = "Figma" },
+            new() { SkillName = "Sketch" },
+            new() { SkillName = "Prototyping" }
+        };
+
+        // Add languages to all sellers (first 15 are sellers)
+        foreach (var user in users.Take(15))
         {
             user.Languages = new List<UserLanguage>
             {
@@ -356,12 +623,17 @@ public static class DbSeeder
             };
         }
         
-        // Add languages to buyers
-        users[8].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
-        users[9].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
-        users[10].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" }, new() { LanguageName = "Mandarin", Proficiency = "Fluent" } };
-        users[11].Languages = new List<UserLanguage> { new() { LanguageName = "Spanish", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
-        users[12].Languages = new List<UserLanguage> { new() { LanguageName = "Korean", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
+        // Add languages to buyers (indices 15+)
+        users[15].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
+        users[16].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
+        users[17].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" }, new() { LanguageName = "Mandarin", Proficiency = "Fluent" } };
+        users[18].Languages = new List<UserLanguage> { new() { LanguageName = "Spanish", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
+        users[19].Languages = new List<UserLanguage> { new() { LanguageName = "Korean", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
+        users[20].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
+        users[21].Languages = new List<UserLanguage> { new() { LanguageName = "English", Proficiency = "Native" } };
+        users[22].Languages = new List<UserLanguage> { new() { LanguageName = "Spanish", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
+        users[23].Languages = new List<UserLanguage> { new() { LanguageName = "Arabic", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
+        users[24].Languages = new List<UserLanguage> { new() { LanguageName = "Japanese", Proficiency = "Native" }, new() { LanguageName = "English", Proficiency = "Fluent" } };
 
         await context.Users.AddRangeAsync(users);
         await context.SaveChangesAsync();
@@ -595,6 +867,160 @@ public static class DbSeeder
                 new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/virtual-assistant.jpg" },
                 new[] { "virtual assistant", "admin support", "data entry", "scheduling" },
                 50, 100, 200, 7, 7, 7
+            ),
+
+            // === Zain's Gigs (WordPress Developer) ===
+            CreateGig(
+                users[8].Id, programmingCategory.Id,
+                "I will build a custom WordPress website",
+                "custom-wordpress-website",
+                "Get a professional WordPress website tailored to your needs! Custom theme development, plugin integration, WooCommerce setup, and full responsive design. SEO optimized and fast loading.",
+                4.8m, 156, 5,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/wordpress-website.jpg" },
+                new[] { "wordpress", "website", "woocommerce", "custom theme" },
+                80, 200, 400, 5, 10, 14
+            ),
+            CreateGig(
+                users[8].Id, programmingCategory.Id,
+                "I will create a WooCommerce store for you",
+                "woocommerce-store-setup",
+                "Launch your online store with WooCommerce! Complete setup including product configuration, payment gateways, shipping options, and store customization. Ready to sell!",
+                4.9m, 89, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/woocommerce-store.jpg" },
+                new[] { "woocommerce", "ecommerce", "online store", "shopify alternative" },
+                150, 350, 600, 7, 14, 21
+            ),
+
+            // === Layla's Gigs (Photographer) ===
+            CreateGig(
+                users[9].Id, graphicsCategory.Id,
+                "I will edit your photos professionally",
+                "professional-photo-editing",
+                "Transform your photos with professional editing! Color correction, retouching, background removal, and enhancement. Perfect for portraits, products, and social media content.",
+                4.9m, 112, 6,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/photo-editing.jpg" },
+                new[] { "photo editing", "photoshop", "retouching", "color correction" },
+                15, 35, 70, 1, 2, 3
+            ),
+            CreateGig(
+                users[9].Id, graphicsCategory.Id,
+                "I will create product photos with white background",
+                "product-photos-white-background",
+                "Professional product photography with clean white backgrounds. Perfect for e-commerce stores, Amazon listings, and catalogs. High-resolution images ready to use.",
+                4.8m, 67, 4,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-photography.jpg" },
+                new[] { "product photography", "white background", "ecommerce", "amazon" },
+                20, 50, 100, 2, 3, 5
+            ),
+
+            // === Youssef's Gigs (Mobile Developer) ===
+            CreateGig(
+                users[10].Id, programmingCategory.Id,
+                "I will develop a mobile app for iOS and Android",
+                "ios-android-mobile-app",
+                "Build your app once, deploy everywhere! React Native mobile app development for both iOS and Android. Native performance with cross-platform efficiency.",
+                5.0m, 87, 2,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/mobile-app.jpg" },
+                new[] { "react native", "mobile app", "ios", "android" },
+                200, 500, 1000, 14, 21, 30
+            ),
+            CreateGig(
+                users[10].Id, programmingCategory.Id,
+                "I will fix bugs in your mobile app",
+                "fix-mobile-app-bugs",
+                "Having issues with your mobile app? I'll debug, fix crashes, optimize performance, and ensure smooth operation on both iOS and Android platforms.",
+                4.9m, 45, 5,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/app-bug-fix.jpg" },
+                new[] { "bug fix", "mobile app", "debugging", "optimization" },
+                40, 100, 200, 2, 5, 7
+            ),
+
+            // === Fatima's Gigs (Voice Over) ===
+            CreateGig(
+                users[11].Id, musicCategory.Id,
+                "I will record professional Arabic voice over",
+                "professional-arabic-voice-over",
+                "Native Arabic speaker providing professional voice-over services. Perfect for commercials, explainer videos, e-learning, and narration. Warm, clear, and engaging voice.",
+                4.9m, 203, 7,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/arabic-voice.jpg" },
+                new[] { "voice over", "arabic", "commercial", "narration" },
+                30, 70, 140, 1, 2, 3
+            ),
+            CreateGig(
+                users[11].Id, musicCategory.Id,
+                "I will narrate your audiobook in Arabic or English",
+                "audiobook-narration-arabic-english",
+                "Bring your book to life with professional audiobook narration! Experienced narrator with recording studio quality. Available in both Arabic and English.",
+                5.0m, 56, 2,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/audiobook-narration.jpg" },
+                new[] { "audiobook", "narration", "voice over", "book" },
+                100, 250, 500, 14, 21, 30
+            ),
+
+            // === Karim's Gigs (3D Artist) ===
+            CreateGig(
+                users[12].Id, videoCategory.Id,
+                "I will create 3D models for games or products",
+                "3d-models-games-products",
+                "High-quality 3D models for games, product visualization, or marketing. Low-poly or high-detail models with textures and materials. Ready for your project!",
+                4.7m, 94, 4,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/3d-modeling.jpg" },
+                new[] { "3d modeling", "blender", "maya", "3d models" },
+                50, 120, 250, 3, 5, 7
+            ),
+            CreateGig(
+                users[12].Id, videoCategory.Id,
+                "I will create 3D product animations",
+                "3d-product-animations",
+                "Showcase your product with stunning 3D animations! Perfect for marketing, commercials, and social media. Professional quality that grabs attention.",
+                4.8m, 38, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/3d-animation.jpg" },
+                new[] { "3d animation", "product animation", "commercial", "motion graphics" },
+                80, 180, 350, 5, 7, 10
+            ),
+
+            // === Hala's Gigs (Data Analyst) ===
+            CreateGig(
+                users[13].Id, businessCategory.Id,
+                "I will analyze your data and create visualizations",
+                "data-analysis-visualizations",
+                "Turn your raw data into actionable insights! Data analysis, statistical modeling, and beautiful visualizations using Python, Tableau, and Power BI. Detailed reports included.",
+                4.8m, 71, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/data-analysis.jpg" },
+                new[] { "data analysis", "python", "tableau", "visualization" },
+                60, 150, 300, 3, 5, 7
+            ),
+            CreateGig(
+                users[13].Id, businessCategory.Id,
+                "I will create interactive dashboards in Tableau or Power BI",
+                "interactive-dashboards-tableau-powerbi",
+                "Transform your business data into interactive dashboards! Real-time insights, beautiful visualizations, and user-friendly interfaces. Perfect for executives and teams.",
+                4.9m, 42, 2,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/dashboard.jpg" },
+                new[] { "tableau", "power bi", "dashboard", "business intelligence" },
+                100, 250, 500, 5, 7, 10
+            ),
+
+            // === Bassam's Gigs (UI/UX Designer) ===
+            CreateGig(
+                users[14].Id, graphicsCategory.Id,
+                "I will design a modern UI/UX for your app or website",
+                "modern-ui-ux-design",
+                "User-centered design that converts! Complete UI/UX design including wireframes, mockups, prototypes, and design systems. Figma files included with handoff documentation.",
+                4.9m, 128, 4,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ui-ux-design.jpg" },
+                new[] { "ui design", "ux design", "figma", "prototype" },
+                100, 250, 500, 5, 10, 14
+            ),
+            CreateGig(
+                users[14].Id, graphicsCategory.Id,
+                "I will redesign your existing website or app",
+                "website-app-redesign",
+                "Modernize your digital presence with a complete redesign! Improved user experience, updated visuals, and better conversion rates. Based on UX best practices.",
+                4.8m, 73, 5,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/redesign.jpg" },
+                new[] { "redesign", "ui ux", "modern design", "conversion optimization" },
+                150, 350, 700, 7, 14, 21
             )
         };
 
@@ -604,14 +1030,14 @@ public static class DbSeeder
         // ============================================
         // ORDERS
         // ============================================
-        var buyerIds = users.Skip(8).Take(5).Select(u => u.Id).ToList(); // Last 5 are buyers
+        var buyerIds = users.Skip(15).Take(10).Select(u => u.Id).ToList(); // Indices 15-24 are buyers
         var orders = new List<Order>();
         var statuses = new[] { "pending", "in_progress", "delivered", "completed", "completed", "completed" };
 
         // Create orders for each buyer
         foreach (var buyerId in buyerIds)
         {
-            var randomGigs = gigs.OrderBy(_ => Random.Shared.Next()).Take(3).ToList();
+            var randomGigs = gigs.OrderBy(_ => Random.Shared.Next()).Take(4).ToList();
             foreach (var gig in randomGigs)
             {
                 var packageType = new[] { "basic", "standard", "premium" }[Random.Shared.Next(3)];

@@ -4,6 +4,7 @@ import { Layout } from './components/layout';
 import Home from './pages/Home';
 import Gigs from './pages/Gigs';
 import GigDetails from './pages/GigDetails';
+import CreateGig from './pages/CreateGig';
 import { Login, Register } from './pages/Auth';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
@@ -41,6 +42,11 @@ function App() {
         <Route path="gigs" element={<Gigs />} />
         <Route path="gig/:slug" element={<GigDetails />} />
         <Route path="profile/:username" element={<Profile />} />
+        <Route path="gigs/create" element={
+          <ProtectedRoute>
+            <CreateGig />
+          </ProtectedRoute>
+        } />
         
         {/* Protected Routes */}
         <Route path="dashboard" element={

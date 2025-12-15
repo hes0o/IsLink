@@ -51,9 +51,12 @@ function GigDetails() {
               <div className="seller-bar">
                 <Link to={`/profile/${gig.seller?.username}`} className="seller-info">
                   <img 
-                    src={gig.seller?.avatar} 
-                    alt={gig.seller?.username}
+                    src={gig.seller?.avatarUrl || gig.seller?.AvatarUrl || 'https://via.placeholder.com/40?text=U'} 
+                    alt={gig.seller?.username || gig.seller?.Username}
                     className="seller-avatar"
+                    onError={(e) => {
+                      e.target.src = 'https://via.placeholder.com/40?text=U';
+                    }}
                   />
                   <div className="seller-details">
                     <span className="seller-name">{gig.seller?.username}</span>
@@ -126,9 +129,12 @@ function GigDetails() {
                 <div className="seller-card">
                   <Link to={`/profile/${gig.seller?.username}`} className="seller-profile">
                     <img 
-                      src={gig.seller?.avatar} 
-                      alt={gig.seller?.username}
+                      src={gig.seller?.avatarUrl || gig.seller?.AvatarUrl || 'https://via.placeholder.com/80?text=U'} 
+                      alt={gig.seller?.username || gig.seller?.Username}
                       className="seller-avatar-lg"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/80?text=U';
+                      }}
                     />
                     <div className="seller-info-detailed">
                       <h3>{gig.seller?.fullName}</h3>
@@ -203,9 +209,12 @@ function GigDetails() {
                     <div key={review.id} className="review-card">
                       <div className="review-header">
                         <img 
-                          src={review.buyerAvatar} 
-                          alt={review.buyerName}
+                          src={review.buyer?.avatarUrl || review.buyer?.AvatarUrl || review.buyerAvatar || 'https://via.placeholder.com/40?text=U'} 
+                          alt={review.buyer?.fullName || review.buyer?.FullName || review.buyerName || 'Buyer'}
                           className="reviewer-avatar"
+                          onError={(e) => {
+                            e.target.src = 'https://via.placeholder.com/40?text=U';
+                          }}
                         />
                         <div className="reviewer-info">
                           <span className="reviewer-name">{review.buyerName}</span>
