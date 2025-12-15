@@ -7,20 +7,63 @@ public static class DbSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context)
     {
-        // Check if gigs already seeded (more specific check)
+        Console.WriteLine("🌱 Starting database seeding process...");
+        
+        // Clear existing data to ensure fresh seed
+        Console.WriteLine("🧹 Clearing existing seed data...");
+        
+        // Clear in proper order to respect foreign keys
+        if (await context.Reviews.AnyAsync())
+        {
+            context.Reviews.RemoveRange(await context.Reviews.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
+        if (await context.Orders.AnyAsync())
+        {
+            context.Orders.RemoveRange(await context.Orders.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
+        if (await context.Transactions.AnyAsync())
+        {
+            context.Transactions.RemoveRange(await context.Transactions.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
         if (await context.Gigs.AnyAsync())
         {
-            Console.WriteLine("ℹ️ Database already has gigs - skipping seed");
-            return; // Already seeded
+            context.Gigs.RemoveRange(await context.Gigs.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
+        // Clear user skills and languages (cascade delete will handle this, but being explicit)
+        if (await context.UserSkills.AnyAsync())
+        {
+            context.UserSkills.RemoveRange(await context.UserSkills.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
+        if (await context.UserLanguages.AnyAsync())
+        {
+            context.UserLanguages.RemoveRange(await context.UserLanguages.ToListAsync());
+            await context.SaveChangesAsync();
+        }
+        
+        if (await context.Users.AnyAsync())
+        {
+            context.Users.RemoveRange(await context.Users.ToListAsync());
+            await context.SaveChangesAsync();
         }
         
         // Clear existing categories to re-seed properly
-        var existingCategories = await context.Categories.ToListAsync();
-        if (existingCategories.Any())
+        if (await context.Categories.AnyAsync())
         {
-            context.Categories.RemoveRange(existingCategories);
+            context.Categories.RemoveRange(await context.Categories.ToListAsync());
             await context.SaveChangesAsync();
         }
+        
+        Console.WriteLine("✅ Existing data cleared");
 
         Console.WriteLine("🌱 Seeding database with comprehensive test data...");
 
@@ -1021,6 +1064,284 @@ public static class DbSeeder
                 new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/redesign.jpg" },
                 new[] { "redesign", "ui ux", "modern design", "conversion optimization" },
                 150, 350, 700, 7, 14, 21
+            ),
+
+            // === ADDITIONAL GIGS FOR EACH CATEGORY ===
+            
+            // More Graphics & Design Gigs
+            CreateGig(
+                users[0].Id, graphicsCategory.Id,
+                "I will create custom illustrations and digital artwork",
+                "custom-illustrations-digital-artwork",
+                "Unique illustrations and digital artwork for your projects! Character design, book illustrations, concept art, and custom graphics. Available in various styles from cartoon to realistic.",
+                4.8m, 92, 6,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/illustrations.jpg" },
+                new[] { "illustration", "digital art", "character design", "artwork" },
+                40, 90, 180, 3, 5, 7
+            ),
+            CreateGig(
+                users[9].Id, graphicsCategory.Id,
+                "I will design custom flyers and posters",
+                "custom-flyers-posters-design",
+                "Eye-catching flyers and posters for your events, promotions, or business! Professional design with print-ready files. Fast turnaround and unlimited revisions.",
+                4.7m, 156, 8,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/flyers.jpg" },
+                new[] { "flyer design", "poster design", "print design", "marketing materials" },
+                20, 45, 90, 2, 3, 5
+            ),
+            CreateGig(
+                users[9].Id, graphicsCategory.Id,
+                "I will design professional business cards",
+                "professional-business-cards-design",
+                "Stand out with professionally designed business cards! Modern and elegant designs that represent your brand. Print-ready files included. Multiple design concepts.",
+                4.9m, 203, 5,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/business-cards.jpg" },
+                new[] { "business cards", "card design", "print design", "branding" },
+                15, 35, 70, 1, 2, 3
+            ),
+
+            // More Programming & Tech Gigs
+            CreateGig(
+                users[1].Id, programmingCategory.Id,
+                "I will create a RESTful API using .NET Core",
+                "restful-api-dotnet-core",
+                "Build robust REST APIs with .NET Core! Clean architecture, authentication, documentation, and testing included. Scalable and production-ready code.",
+                5.0m, 67, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/api-development.jpg" },
+                new[] { "api", ".net core", "rest api", "backend" },
+                150, 350, 700, 5, 10, 14
+            ),
+            CreateGig(
+                users[8].Id, programmingCategory.Id,
+                "I will customize your WordPress theme",
+                "wordpress-theme-customization",
+                "Make your WordPress site unique with custom theme modifications! CSS tweaks, functionality additions, and layout changes. Responsive design ensured.",
+                4.8m, 124, 7,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/wordpress-custom.jpg" },
+                new[] { "wordpress", "theme customization", "php", "css" },
+                30, 75, 150, 2, 4, 7
+            ),
+            CreateGig(
+                users[10].Id, programmingCategory.Id,
+                "I will convert your website to a mobile app",
+                "website-to-mobile-app-conversion",
+                "Transform your website into a native mobile app! React Native or Flutter. App store submission support included. Cross-platform iOS and Android.",
+                4.9m, 56, 2,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/website-to-app.jpg" },
+                new[] { "mobile app", "react native", "flutter", "ios android" },
+                200, 500, 1000, 10, 14, 21
+            ),
+            CreateGig(
+                users[1].Id, programmingCategory.Id,
+                "I will set up CI/CD pipeline for your project",
+                "cicd-pipeline-setup",
+                "Automate your deployment with CI/CD pipelines! GitHub Actions, GitLab CI, or Jenkins. Automated testing, building, and deployment. Documentation included.",
+                4.9m, 38, 1,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/cicd.jpg" },
+                new[] { "CI/CD", "devops", "automation", "deployment" },
+                80, 200, 400, 3, 5, 7
+            ),
+
+            // More Writing & Translation Gigs
+            CreateGig(
+                users[2].Id, writingCategory.Id,
+                "I will write professional product descriptions",
+                "professional-product-descriptions",
+                "Compelling product descriptions that sell! SEO-optimized, conversion-focused copy for your e-commerce store. Multiple formats and styles available.",
+                4.9m, 187, 9,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-descriptions.jpg" },
+                new[] { "product descriptions", "copywriting", "ecommerce", "seo" },
+                10, 25, 50, 1, 2, 3
+            ),
+            CreateGig(
+                users[2].Id, writingCategory.Id,
+                "I will proofread and edit your documents",
+                "proofreading-editing-documents",
+                "Polish your writing with professional proofreading and editing! Grammar, spelling, punctuation, and style corrections. Fast turnaround for any document type.",
+                4.8m, 234, 12,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/proofreading.jpg" },
+                new[] { "proofreading", "editing", "grammar", "writing" },
+                15, 40, 80, 1, 2, 3
+            ),
+            CreateGig(
+                users[2].Id, writingCategory.Id,
+                "I will write engaging social media posts",
+                "engaging-social-media-posts",
+                "Boost your social media engagement with catchy posts! Content for Instagram, Facebook, Twitter, LinkedIn. Hashtag research included. Multiple posts per order.",
+                4.7m, 312, 15,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/social-posts.jpg" },
+                new[] { "social media", "content writing", "instagram", "facebook" },
+                20, 50, 100, 2, 3, 5
+            ),
+
+            // More Video & Animation Gigs
+            CreateGig(
+                users[3].Id, videoCategory.Id,
+                "I will create professional product demo videos",
+                "professional-product-demo-videos",
+                "Showcase your product with engaging demo videos! High-quality production with music, graphics, and professional editing. Perfect for marketing and sales.",
+                4.8m, 89, 4,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-demo.jpg" },
+                new[] { "product video", "demo video", "marketing video", "commercial" },
+                60, 140, 280, 3, 5, 7
+            ),
+            CreateGig(
+                users[3].Id, videoCategory.Id,
+                "I will add subtitles and captions to your videos",
+                "video-subtitles-captions",
+                "Make your videos accessible with professional subtitles and captions! Multiple languages supported. SRT files included. Fast delivery and accurate transcription.",
+                4.9m, 267, 11,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/subtitles.jpg" },
+                new[] { "subtitles", "captions", "transcription", "accessibility" },
+                15, 35, 70, 1, 2, 3
+            ),
+            CreateGig(
+                users[12].Id, videoCategory.Id,
+                "I will create logo animations and motion graphics",
+                "logo-animations-motion-graphics",
+                "Bring your logo to life with stunning animations! Professional motion graphics for intros, outros, and brand identity. After Effects animations included.",
+                4.8m, 145, 6,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/logo-animation.jpg" },
+                new[] { "logo animation", "motion graphics", "after effects", "intro" },
+                50, 120, 250, 3, 5, 7
+            ),
+
+            // More Digital Marketing Gigs
+            CreateGig(
+                users[4].Id, marketingCategory.Id,
+                "I will create and manage your Google Ads campaigns",
+                "google-ads-campaigns-management",
+                "Drive traffic and conversions with optimized Google Ads! Campaign setup, keyword research, ad copy creation, and ongoing management. Detailed reporting included.",
+                4.9m, 178, 5,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/google-ads.jpg" },
+                new[] { "google ads", "ppc", "advertising", "campaign management" },
+                100, 250, 500, 7, 14, 30
+            ),
+            CreateGig(
+                users[4].Id, marketingCategory.Id,
+                "I will write SEO-optimized meta descriptions and titles",
+                "seo-meta-descriptions-titles",
+                "Improve your search rankings with optimized meta tags! SEO-friendly titles and descriptions for all your pages. Keyword research included.",
+                4.8m, 423, 18,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/meta-tags.jpg" },
+                new[] { "SEO", "meta tags", "meta descriptions", "keyword research" },
+                25, 60, 120, 1, 2, 3
+            ),
+            CreateGig(
+                users[4].Id, marketingCategory.Id,
+                "I will create a comprehensive marketing strategy",
+                "comprehensive-marketing-strategy",
+                "Develop a winning marketing strategy for your business! Market analysis, competitor research, target audience identification, and action plan. Complete roadmap included.",
+                4.9m, 94, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/marketing-strategy.jpg" },
+                new[] { "marketing strategy", "business strategy", "consulting", "planning" },
+                150, 350, 700, 7, 10, 14
+            ),
+
+            // More Music & Audio Gigs
+            CreateGig(
+                users[5].Id, musicCategory.Id,
+                "I will create custom background music for your videos",
+                "custom-background-music-videos",
+                "Original background music tailored to your videos! Various genres and moods. Royalty-free and exclusive rights. Perfect for YouTube, commercials, and films.",
+                4.8m, 156, 7,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/background-music.jpg" },
+                new[] { "background music", "music production", "royalty free", "custom music" },
+                40, 100, 200, 3, 5, 7
+            ),
+            CreateGig(
+                users[5].Id, musicCategory.Id,
+                "I will remove background noise from your audio",
+                "remove-background-noise-audio",
+                "Clean up your audio recordings! Professional noise removal and audio enhancement. Perfect for podcasts, interviews, and voice recordings.",
+                4.9m, 289, 14,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/noise-removal.jpg" },
+                new[] { "audio editing", "noise removal", "audio cleanup", "podcast" },
+                20, 50, 100, 1, 2, 3
+            ),
+            CreateGig(
+                users[11].Id, musicCategory.Id,
+                "I will add sound effects to your video or audio",
+                "sound-effects-video-audio",
+                "Enhance your projects with professional sound effects! Extensive library of high-quality sounds. Perfect sync and timing. Multiple formats available.",
+                4.8m, 112, 6,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/sound-effects.jpg" },
+                new[] { "sound effects", "audio design", "foley", "post production" },
+                25, 60, 120, 2, 3, 5
+            ),
+
+            // More Business Gigs
+            CreateGig(
+                users[7].Id, businessCategory.Id,
+                "I will create Excel spreadsheets and templates",
+                "excel-spreadsheets-templates",
+                "Professional Excel spreadsheets and templates for your business needs! Formulas, charts, automation, and dashboards. Customizable and user-friendly.",
+                4.8m, 267, 13,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/excel-templates.jpg" },
+                new[] { "excel", "spreadsheet", "templates", "data analysis" },
+                20, 50, 100, 2, 3, 5
+            ),
+            CreateGig(
+                users[13].Id, businessCategory.Id,
+                "I will create PowerPoint presentations",
+                "powerpoint-presentations-design",
+                "Stunning PowerPoint presentations that impress! Professional design, animations, and templates. Perfect for business, education, or marketing.",
+                4.9m, 334, 16,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/powerpoint.jpg" },
+                new[] { "powerpoint", "presentation", "slides", "design" },
+                30, 75, 150, 2, 4, 7
+            ),
+            CreateGig(
+                users[7].Id, businessCategory.Id,
+                "I will provide market research and analysis",
+                "market-research-analysis",
+                "Data-driven market research for your business! Industry analysis, competitor research, target audience insights, and strategic recommendations.",
+                4.8m, 78, 2,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/market-research.jpg" },
+                new[] { "market research", "business analysis", "competitor research", "strategy" },
+                100, 250, 500, 5, 7, 10
+            ),
+
+            // More AI Services Gigs
+            CreateGig(
+                users[6].Id, aiCategory.Id,
+                "I will create AI-generated images and artwork",
+                "ai-generated-images-artwork",
+                "Stunning AI-generated images for your projects! Custom artwork, product photos, concept art, and marketing visuals. Multiple styles and variations.",
+                4.9m, 156, 8,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-images.jpg" },
+                new[] { "AI images", "ai art", "generated images", "midjourney" },
+                25, 60, 120, 1, 2, 3
+            ),
+            CreateGig(
+                users[6].Id, aiCategory.Id,
+                "I will fine-tune AI models for your specific needs",
+                "fine-tune-ai-models",
+                "Custom AI models trained on your data! Fine-tuning GPT, BERT, or other models for specific tasks. Data preprocessing and model optimization included.",
+                5.0m, 45, 1,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-finetuning.jpg" },
+                new[] { "AI training", "machine learning", "fine-tuning", "custom model" },
+                300, 700, 1500, 10, 14, 21
+            ),
+            CreateGig(
+                users[6].Id, aiCategory.Id,
+                "I will create AI-powered data analysis scripts",
+                "ai-powered-data-analysis",
+                "Automate your data analysis with AI! Python scripts using machine learning for pattern recognition, predictions, and insights. Documentation included.",
+                4.9m, 67, 3,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-analysis.jpg" },
+                new[] { "AI analysis", "machine learning", "data science", "python" },
+                100, 250, 500, 5, 7, 10
+            ),
+            CreateGig(
+                users[6].Id, aiCategory.Id,
+                "I will build an AI content generator",
+                "ai-content-generator",
+                "Automate content creation with AI! Custom content generator for blogs, social media, product descriptions, or emails. API integration available.",
+                4.8m, 89, 4,
+                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-content.jpg" },
+                new[] { "AI content", "content generator", "automation", "GPT" },
+                150, 350, 700, 7, 10, 14
             )
         };
 
@@ -1160,12 +1481,14 @@ public static class DbSeeder
         await context.SaveChangesAsync();
 
         Console.WriteLine("✅ Database seeded successfully!");
-        Console.WriteLine($"   - {categories.Count} categories");
-        Console.WriteLine($"   - {users.Count} users ({users.Count(u => u.Role == "seller")} sellers, {users.Count(u => u.Role == "buyer")} buyers)");
-        Console.WriteLine($"   - {gigs.Count} gigs");
-        Console.WriteLine($"   - {orders.Count} orders");
-        Console.WriteLine($"   - {reviews.Count} reviews");
-        Console.WriteLine($"   - {transactions.Count} transactions");
+        Console.WriteLine($"   📁 {categories.Count} categories");
+        Console.WriteLine($"   👥 {users.Count} users ({users.Count(u => u.Role == "seller")} sellers, {users.Count(u => u.Role == "buyer")} buyers)");
+        Console.WriteLine($"   🛍️  {gigs.Count} gigs/services");
+        Console.WriteLine($"   📦 {orders.Count} orders");
+        Console.WriteLine($"   ⭐ {reviews.Count} reviews");
+        Console.WriteLine($"   💰 {transactions.Count} transactions");
+        Console.WriteLine("");
+        Console.WriteLine("🎉 All services are now available in the database!");
     }
 
     private static Gig CreateGig(
