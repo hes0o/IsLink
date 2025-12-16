@@ -31,14 +31,15 @@ function LinkerAI() {
       setLoading(true);
       setErrorBanner('');
       const response = await linkerAIAPI.start();
-      if (!response?.Success) {
+      const success = response?.Success ?? response?.success;
+      if (!success) {
         throw new Error(response?.Message || response?.message || 'Failed to start LinkerAI session');
       }
 
-      setSessionId(response.SessionId);
+      setSessionId(response.SessionId || response.sessionId);
       setMessages([{
         role: 'assistant',
-        content: response.Message,
+        content: response.Message || response.message,
         timestamp: new Date()
       }]);
     } catch (error) {
@@ -73,19 +74,22 @@ function LinkerAI() {
 
     try {
       const response = await linkerAIAPI.chat(sessionId, messageToSend);
-      if (!response?.Success) {
+      const success = response?.Success ?? response?.success;
+      if (!success) {
         throw new Error(response?.Message || response?.message || 'LinkerAI request failed');
       }
 
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: response.Message,
+        content: response.Message || response.message,
         timestamp: new Date()
       }]);
 
       // If recommendations are ready, set them
-      if (response.IsComplete && response.Recommendations) {
-        setRecommendations(response.Recommendations);
+      const isComplete = response.IsComplete ?? response.isComplete;
+      const recs = response.Recommendations || response.recommendations;
+      if (isComplete && recs) {
+        setRecommendations(recs);
       }
     } catch (error) {
       console.error('Error sending message:', error);
