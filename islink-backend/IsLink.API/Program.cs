@@ -47,6 +47,9 @@ builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<IReviewService, ReviewService>();
 builder.Services.AddScoped<IMessageService, MessageService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// HttpClient for Groq API (LinkerAI)
+builder.Services.AddHttpClient();
 builder.Services.AddScoped<ILinkerAIService, LinkerAIService>();
 
 // ============================================

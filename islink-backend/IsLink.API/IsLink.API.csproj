@@ -30,9 +30,6 @@
     
     <!-- AutoMapper for DTOs -->
     <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="12.0.1" />
-    
-    <!-- OpenAI API -->
-    <PackageReference Include="OpenAI" Version="1.10.0" />
   </ItemGroup>
 
 </Project>

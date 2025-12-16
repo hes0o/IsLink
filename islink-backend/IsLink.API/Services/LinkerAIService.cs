@@ -4,10 +4,9 @@ using IsLink.API.Models.Entities;
 using IsLink.API.Models.MongoDB;
 using Microsoft.EntityFrameworkCore;
 using MongoDB.Driver;
-using OpenAI;
-using OpenAI.Chat;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Text;
 
 namespace IsLink.API.Services;
 
@@ -16,20 +15,24 @@ public class LinkerAIService : ILinkerAIService
     private readonly IMongoCollection<ChatHistory> _chatHistories;
     private readonly ApplicationDbContext _context;
     private readonly IGigService _gigService;
-    private readonly OpenAIClient _openAIClient;
-    private readonly string _openAIKey;
+    private readonly HttpClient _httpClient;
+    private readonly string _geminiApiKey;
+    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
 
     public LinkerAIService(
         IMongoDatabase database,
         ApplicationDbContext context,
         IGigService gigService,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        IHttpClientFactory httpClientFactory)
     {
         _chatHistories = database.GetCollection<ChatHistory>("linkerai_conversations");
         _context = context;
         _gigService = gigService;
-        _openAIKey = configuration["OpenAI:ApiKey"] ?? throw new InvalidOperationException("OpenAI API key not configured");
-        _openAIClient = new OpenAIClient(_openAIKey);
+        _geminiApiKey = configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
+        
+        // Create HTTP client for Gemini API
+        _httpClient = httpClientFactory.CreateClient();
     }
 
     public async Task<LinkerAIChatResponse> StartConversationAsync(LinkerAIStartRequest request)
@@ -114,30 +117,50 @@ public class LinkerAIService : ILinkerAIService
             Timestamp = DateTime.UtcNow
         });
 
-        // Convert to OpenAI format
-        var messages = chatHistory.Messages.Select(m => new ChatMessage
-        {
-            Role = m.Role switch
+        // Convert to Gemini API format
+        var contents = chatHistory.Messages
+            .Where(m => m.Role != "system") // Gemini handles system message differently
+            .Select(m => new
             {
-                "system" => ChatMessageRole.System,
-                "user" => ChatMessageRole.User,
-                "assistant" => ChatMessageRole.Assistant,
-                _ => ChatMessageRole.User
-            },
-            Content = m.Content
-        }).ToList();
+                role = m.Role == "user" ? "user" : "model", // Gemini uses "model" instead of "assistant"
+                parts = new[] { new { text = m.Content } }
+            }).ToList();
 
-        // Call OpenAI
-        var chatCompletionOptions = new ChatCompletionOptions
+        // Add system instruction if present
+        var systemMessage = chatHistory.Messages.FirstOrDefault(m => m.Role == "system");
+        var systemInstruction = systemMessage != null ? systemMessage.Content : GetSystemPrompt();
+
+        // Call Gemini API
+        var requestBody = new
         {
-            Messages = messages,
-            Model = "gpt-3.5-turbo",
-            Temperature = 0.7f,
-            MaxTokens = 1000
+            contents = contents,
+            systemInstruction = new
+            {
+                parts = new[] { new { text = systemInstruction } }
+            },
+            generationConfig = new
+            {
+                temperature = 0.7,
+                maxOutputTokens = 2000,
+                topP = 0.95,
+                topK = 40
+            }
         };
 
-        var completion = await _openAIClient.ChatEndpoint.GetCompletionAsync(chatCompletionOptions);
-        var aiResponse = completion.FirstChoice.Message.Content;
+        var jsonContent = JsonSerializer.Serialize(requestBody);
+        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PostAsync($"{_geminiApiUrl}?key={_geminiApiKey}", content);
+        response.EnsureSuccessStatusCode();
+
+        var responseContent = await response.Content.ReadAsStringAsync();
+        var geminiResponse = JsonSerializer.Deserialize<GeminiApiResponse>(responseContent, new JsonSerializerOptions
+        {
+            PropertyNameCaseInsensitive = true
+        });
+
+        var aiResponse = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text 
+            ?? "I apologize, but I couldn't generate a response. Please try again.";
 
         // Add AI response to history
         chatHistory.Messages.Add(new ChatMessage
@@ -292,7 +315,7 @@ public class LinkerAIService : ILinkerAIService
             }
 
             // Rating boost
-            score += gig.Rating;
+            score += (double)gig.Rating;
 
             if (score > 0)
             {
@@ -432,6 +455,27 @@ Remember: Focus on understanding their needs completely before recommending serv
         public int? DeadlineDays { get; set; }
         public string? Description { get; set; }
         public string? BrandName { get; set; }
+    }
+
+    // Gemini API Response Models
+    private class GeminiApiResponse
+    {
+        public List<GeminiCandidate>? Candidates { get; set; }
+    }
+
+    private class GeminiCandidate
+    {
+        public GeminiContent? Content { get; set; }
+    }
+
+    private class GeminiContent
+    {
+        public List<GeminiPart>? Parts { get; set; }
+    }
+
+    private class GeminiPart
+    {
+        public string? Text { get; set; }
     }
 }
 
