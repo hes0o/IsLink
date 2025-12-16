@@ -47,14 +47,22 @@ public class LinkerAIService : ILinkerAIService
         }
         else
         {
-            var keyPreview = _geminiApiKey.Length > 10 ? _geminiApiKey.Substring(0, 10) + "..." : "***";
-            Console.WriteLine($"✅ LinkerAI: Gemini API key loaded (starts with: {keyPreview})");
-            
-            // Initialize Google GenAI client with the official SDK
-            // Set the API key in the environment for the SDK
-            Environment.SetEnvironmentVariable("GEMINI_API_KEY", _geminiApiKey);
-            _geminiClient = new Client();
-            Console.WriteLine($"✅ LinkerAI: Using {MODEL_NAME} model");
+            try
+            {
+                var keyPreview = _geminiApiKey.Length > 10 ? _geminiApiKey.Substring(0, 10) + "..." : "***";
+                Console.WriteLine($"✅ LinkerAI: Gemini API key loaded (starts with: {keyPreview})");
+                
+                // Initialize Google GenAI client with the official SDK
+                // Set the API key in the environment for the SDK
+                Environment.SetEnvironmentVariable("GEMINI_API_KEY", _geminiApiKey);
+                _geminiClient = new Client(apiKey: _geminiApiKey);
+                Console.WriteLine($"✅ LinkerAI: Using {MODEL_NAME} model");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ LinkerAI: Failed to initialize Gemini client: {ex.Message}");
+                _geminiClient = null;
+            }
         }
     }
 
