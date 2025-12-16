@@ -18,7 +18,7 @@ public class LinkerAIService : ILinkerAIService
     private readonly IGigService _gigService;
     private readonly HttpClient _httpClient;
     private readonly string _geminiApiKey;
-    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
 
     // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
     private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
