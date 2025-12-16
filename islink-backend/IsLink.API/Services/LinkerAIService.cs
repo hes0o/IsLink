@@ -18,7 +18,7 @@ public class LinkerAIService : ILinkerAIService
     private readonly IGigService _gigService;
     private readonly HttpClient _httpClient;
     private readonly string _geminiApiKey;
-    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent";
+    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
 
     // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
     private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
@@ -154,26 +154,38 @@ public class LinkerAIService : ILinkerAIService
         });
 
         // Convert to Gemini API format
-        var contents = chatHistory.Messages
-            .Where(m => m.Role != "system") // Gemini handles system message differently
-            .Select(m => new
-            {
-                role = m.Role == "user" ? "user" : "model", // Gemini uses "model" instead of "assistant"
-                parts = new[] { new { text = m.Content } }
-            }).ToList();
-
-        // Add system instruction if present
+        // For gemini-pro, include system prompt as first user message (workaround)
         var systemMessage = chatHistory.Messages.FirstOrDefault(m => m.Role == "system");
-        var systemInstruction = systemMessage != null ? systemMessage.Content : GetSystemPrompt();
+        var systemPrompt = systemMessage?.Content ?? GetSystemPrompt();
+        
+        var contents = new List<object>();
+        
+        // Add system prompt as first user message
+        contents.Add(new
+        {
+            role = "user",
+            parts = new[] { new { text = $"[SYSTEM INSTRUCTIONS - Follow these exactly]\n{systemPrompt}\n\n[END SYSTEM INSTRUCTIONS]\n\nNow, please greet me and help me find services." } }
+        });
+        contents.Add(new
+        {
+            role = "model", 
+            parts = new[] { new { text = "I understand. I'm LinkerAI, ready to help you find the perfect services on IsLink. I'll follow all the instructions provided. Let's get started!" } }
+        });
+        
+        // Add conversation messages (skip system message)
+        foreach (var msg in chatHistory.Messages.Where(m => m.Role != "system"))
+        {
+            contents.Add(new
+            {
+                role = msg.Role == "user" ? "user" : "model",
+                parts = new[] { new { text = msg.Content } }
+            });
+        }
 
         // Call Gemini API
         var requestBody = new
         {
             contents = contents,
-            systemInstruction = new
-            {
-                parts = new[] { new { text = systemInstruction } }
-            },
             generationConfig = new
             {
                 temperature = 0.7,
