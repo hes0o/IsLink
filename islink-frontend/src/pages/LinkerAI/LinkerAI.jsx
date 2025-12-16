@@ -53,9 +53,10 @@ function LinkerAI() {
     e.preventDefault();
     if (!inputMessage.trim() || !sessionId || loading) return;
 
+    const messageToSend = inputMessage.trim();
     const userMessage = {
       role: 'user',
-      content: inputMessage,
+      content: messageToSend,
       timestamp: new Date()
     };
 
@@ -64,7 +65,7 @@ function LinkerAI() {
     setLoading(true);
 
     try {
-      const response = await linkerAIAPI.chat(sessionId, inputMessage);
+      const response = await linkerAIAPI.chat(sessionId, messageToSend);
       if (response?.Success) {
         setMessages(prev => [...prev, {
           role: 'assistant',
