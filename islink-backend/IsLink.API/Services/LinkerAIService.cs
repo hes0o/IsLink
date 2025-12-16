@@ -33,7 +33,21 @@ public class LinkerAIService : ILinkerAIService
         _chatHistories = database.GetCollection<ChatHistory>("linkerai_conversations");
         _context = context;
         _gigService = gigService;
-        _geminiApiKey = configuration["Gemini:ApiKey"] ?? throw new InvalidOperationException("Gemini API key not configured");
+        
+        // Get Gemini API key - check both formats (appsettings.json and environment variable)
+        _geminiApiKey = configuration["Gemini:ApiKey"] 
+            ?? Environment.GetEnvironmentVariable("Gemini__ApiKey")
+            ?? "";
+        
+        if (string.IsNullOrEmpty(_geminiApiKey) || _geminiApiKey == "your-gemini-api-key-here")
+        {
+            Console.WriteLine("⚠️ LinkerAI: Gemini API key not configured or is placeholder. Set Gemini__ApiKey environment variable on Render.");
+        }
+        else
+        {
+            var keyPreview = _geminiApiKey.Length > 10 ? _geminiApiKey.Substring(0, 10) + "..." : "***";
+            Console.WriteLine($"✅ LinkerAI: Gemini API key loaded (starts with: {keyPreview})");
+        }
         
         // Create HTTP client for Gemini API
         _httpClient = httpClientFactory.CreateClient();
@@ -172,17 +186,37 @@ public class LinkerAIService : ILinkerAIService
         var jsonContent = JsonSerializer.Serialize(requestBody);
         var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync($"{_geminiApiUrl}?key={_geminiApiKey}", content);
-        response.EnsureSuccessStatusCode();
-
-        var responseContent = await response.Content.ReadAsStringAsync();
-        var geminiResponse = JsonSerializer.Deserialize<GeminiApiResponse>(responseContent, new JsonSerializerOptions
+        string aiResponse;
+        try
         {
-            PropertyNameCaseInsensitive = true
-        });
+            var apiUrl = $"{_geminiApiUrl}?key={_geminiApiKey}";
+            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API...");
+            
+            var response = await _httpClient.PostAsync(apiUrl, content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"❌ Gemini API error: {response.StatusCode} - {responseContent}");
+                throw new Exception($"Gemini API returned {response.StatusCode}: {responseContent}");
+            }
 
-        var aiResponse = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text 
-            ?? "I apologize, but I couldn't generate a response. Please try again.";
+            var geminiResponse = JsonSerializer.Deserialize<GeminiApiResponse>(responseContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            aiResponse = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text 
+                ?? "I apologize, but I couldn't generate a response. Please try again.";
+            
+            Console.WriteLine($"✅ LinkerAI: Got response from Gemini");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ LinkerAI Gemini error: {ex.Message}");
+            // Provide a helpful fallback response instead of crashing
+            aiResponse = $"I'm having trouble connecting to my AI backend right now. Error: {ex.Message}. Please check that the Gemini API key is configured correctly on the server (environment variable: Gemini__ApiKey).";
+        }
 
         // Add AI response to history
         chatHistory.Messages.Add(new ChatMessage
