@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using System.Threading;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -192,21 +191,15 @@ using (var scope = app.Services.CreateScope())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
-        // Run migrations with timeout to prevent hanging
-        using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2)))
-        {
-            await dbContext.Database.MigrateAsync(cts.Token);
-            Console.WriteLine("✅ Database migrated successfully");
-        }
+        // Run migrations
+        await dbContext.Database.MigrateAsync();
+        Console.WriteLine("✅ Database migrated successfully");
         
-        // Seed database with demo data (with timeout)
+        // Seed database with demo data
         try
         {
-            using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
-            {
-                await DbSeeder.SeedAsync(dbContext);
-                Console.WriteLine("✅ Database seeded successfully");
-            }
+            await DbSeeder.SeedAsync(dbContext);
+            Console.WriteLine("✅ Database seeded successfully");
         }
         catch (Exception seedEx)
         {

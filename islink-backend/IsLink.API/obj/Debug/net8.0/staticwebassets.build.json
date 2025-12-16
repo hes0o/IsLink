@@ -1,11 +1,1 @@
-{
-  "Version": 1,
-  "Hash": "g46/Gh/dt8HNQh0231lF+u26flUZ9Q0RXDFFa6bZ/4s=",
-  "Source": "IsLink.API",
-  "BasePath": "_content/IsLink.API",
-  "Mode": "Default",
-  "ManifestType": "Build",
-  "ReferencedProjectsConfiguration": [],
-  "DiscoveryPatterns": [],
-  "Assets": []
-}
+{"Version":1,"Hash":"e3KwUjM5gIP4yKG1PWrL9sgD8JYBcc7HHeMn/bKZAr4=","Source":"IsLink.API","BasePath":"/","Mode":"Root","ManifestType":"Build","ReferencedProjectsConfiguration":[],"DiscoveryPatterns":[],"Assets":[],"Endpoints":[]}

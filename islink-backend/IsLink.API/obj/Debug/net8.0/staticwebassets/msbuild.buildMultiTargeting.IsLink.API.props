@@ -1,3 +1,0 @@
-﻿<Project>
-  <Import Project="../build/IsLink.API.props" />
-</Project>
