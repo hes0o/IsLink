@@ -92,14 +92,20 @@ function LinkerAI() {
 
   return (
     <div className="linkerai-page">
-      <div className="container">
-        <div className="linkerai-header">
-          <h1>🤖 LinkerAI</h1>
-          <p>Your intelligent project assistant - Tell me what you need, and I'll find the perfect services for you!</p>
+      {/* Header */}
+      <div className="linkerai-header">
+        <div className="linkerai-header-content">
+          <div className="linkerai-logo">
+            <span className="ai-icon">🤖</span>
+            <h1>LinkerAI</h1>
+          </div>
+          <p>Your intelligent project assistant</p>
         </div>
+      </div>
 
-        <div className="linkerai-content">
-          {/* Chat Section */}
+      <div className="linkerai-main">
+        {/* Chat Section - Centered */}
+        <div className="linkerai-chat-wrapper">
           <div className="linkerai-chat" ref={chatContainerRef}>
             <div className="chat-messages">
               {messages.map((msg, index) => (
@@ -151,9 +157,12 @@ function LinkerAI() {
             </form>
           </div>
 
-          {/* Recommendations Section */}
-          {recommendations && (
-            <div className="linkerai-recommendations">
+          </div>
+        </div>
+
+        {/* Recommendations Section - Sidebar */}
+        {recommendations && (
+          <div className="linkerai-recommendations">
               <h2>📋 Your Personalized Recommendations</h2>
 
               {/* Project Summary */}
@@ -258,9 +267,8 @@ function LinkerAI() {
                   ))}
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

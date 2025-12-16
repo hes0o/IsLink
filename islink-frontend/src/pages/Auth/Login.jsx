@@ -124,9 +124,10 @@ function Login() {
 
             {/* Demo Accounts Info */}
             <div className="demo-accounts">
-              <p><strong>Demo Accounts:</strong></p>
-              <small>design@example.com / password123 (Seller)</small><br/>
-              <small>buyer@example.com / password123 (Buyer)</small>
+              <p><strong>Test Accounts:</strong></p>
+              <small>sarah@islink.com / password123 (Seller)</small><br/>
+              <small>ahmed@islink.com / password123 (Seller)</small><br/>
+              <small>john@shop.com / password123 (Buyer)</small>
             </div>
 
             <div className="divider">
