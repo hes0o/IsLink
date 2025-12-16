@@ -216,6 +216,28 @@
   height: 20px;
 }
 
+/* Demo Accounts Info */
+.demo-accounts {
+  background: #f0f7ff;
+  border: 1px solid #b3d9ff;
+  border-radius: var(--radius-md);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  font-size: var(--font-size-sm);
+}
+
+.demo-accounts p {
+  margin: 0 0 var(--spacing-xs) 0;
+  color: var(--text-primary);
+}
+
+.demo-accounts small {
+  display: block;
+  color: var(--text-secondary);
+  margin: 0.25rem 0;
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
 /* Divider */
 .divider {
   display: flex;
