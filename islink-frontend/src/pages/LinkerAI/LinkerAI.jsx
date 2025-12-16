@@ -156,8 +156,6 @@ function LinkerAI() {
               </button>
             </form>
           </div>
-
-          </div>
         </div>
 
         {/* Recommendations Section - Sidebar */}
