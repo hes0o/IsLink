@@ -7,13 +7,13 @@ ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 ENV NUGET_XMLDOC_MODE=skip
 
-# Copy csproj and restore
+# Copy csproj and restore dependencies
 COPY ["IsLink.API.csproj", "./"]
-RUN dotnet restore
+RUN dotnet restore --verbosity normal
 
 # Copy everything else and build
 COPY . .
-RUN dotnet publish -c Release -o /app/publish --no-restore
+RUN dotnet publish -c Release -o /app/publish
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
