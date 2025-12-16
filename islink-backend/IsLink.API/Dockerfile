@@ -7,18 +7,13 @@ ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 ENV NUGET_XMLDOC_MODE=skip
 
-# Copy csproj and restore (with no-cache flag to avoid memory issues)
+# Copy csproj and restore
 COPY ["IsLink.API.csproj", "./"]
-RUN dotnet restore --no-cache --verbosity quiet
+RUN dotnet restore
 
-# Copy everything else and build (with memory-efficient flags)
+# Copy everything else and build
 COPY . .
-RUN dotnet publish -c Release -o /app/publish \
-    --no-restore \
-    --nologo \
-    /p:UseAppHost=false \
-    /p:PublishTrimmed=false \
-    /p:EnableCompressionInSingleFile=false
+RUN dotnet publish -c Release -o /app/publish --no-restore
 
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
