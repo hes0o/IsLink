@@ -9,6 +9,7 @@ function LinkerAI() {
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState(null);
+  const [errorBanner, setErrorBanner] = useState('');
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
@@ -28,20 +29,25 @@ function LinkerAI() {
   const startConversation = async () => {
     try {
       setLoading(true);
+      setErrorBanner('');
       const response = await linkerAIAPI.start();
-      if (response?.Success) {
-        setSessionId(response.SessionId);
-        setMessages([{
-          role: 'assistant',
-          content: response.Message,
-          timestamp: new Date()
-        }]);
+      if (!response?.Success) {
+        throw new Error(response?.Message || response?.message || 'Failed to start LinkerAI session');
       }
-    } catch (error) {
-      console.error('Error starting conversation:', error);
+
+      setSessionId(response.SessionId);
       setMessages([{
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: response.Message,
+        timestamp: new Date()
+      }]);
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      const msg = error?.message || 'Unknown error';
+      setErrorBanner(msg);
+      setMessages([{
+        role: 'assistant',
+        content: `⚠️ LinkerAI error: ${msg}`,
         timestamp: new Date()
       }]);
     } finally {
@@ -54,6 +60,7 @@ function LinkerAI() {
     if (!inputMessage.trim() || !sessionId || loading) return;
 
     const messageToSend = inputMessage.trim();
+    setErrorBanner('');
     const userMessage = {
       role: 'user',
       content: messageToSend,
@@ -66,23 +73,27 @@ function LinkerAI() {
 
     try {
       const response = await linkerAIAPI.chat(sessionId, messageToSend);
-      if (response?.Success) {
-        setMessages(prev => [...prev, {
-          role: 'assistant',
-          content: response.Message,
-          timestamp: new Date()
-        }]);
+      if (!response?.Success) {
+        throw new Error(response?.Message || response?.message || 'LinkerAI request failed');
+      }
 
-        // If recommendations are ready, set them
-        if (response.IsComplete && response.Recommendations) {
-          setRecommendations(response.Recommendations);
-        }
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: response.Message,
+        timestamp: new Date()
+      }]);
+
+      // If recommendations are ready, set them
+      if (response.IsComplete && response.Recommendations) {
+        setRecommendations(response.Recommendations);
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      const msg = error?.message || 'Unknown error';
+      setErrorBanner(msg);
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: `⚠️ LinkerAI error: ${msg}`,
         timestamp: new Date()
       }]);
     } finally {
@@ -107,6 +118,11 @@ function LinkerAI() {
         {/* Chat Section - Centered */}
         <div className="linkerai-chat-wrapper">
           <div className="linkerai-chat" ref={chatContainerRef}>
+            {errorBanner && (
+              <div className="linkerai-error-banner">
+                <strong>LinkerAI error:</strong> {errorBanner}
+              </div>
+            )}
             <div className="chat-messages">
               {messages.map((msg, index) => (
                 <div key={index} className={`message ${msg.role}`}>

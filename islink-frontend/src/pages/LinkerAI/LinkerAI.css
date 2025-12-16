@@ -78,6 +78,14 @@
   overflow: hidden;
 }
 
+.linkerai-error-banner {
+  background: #fff4f4;
+  border-bottom: 1px solid #ffd0d0;
+  color: #b42318;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
 .chat-messages {
   flex: 1;
   overflow-y: auto;
