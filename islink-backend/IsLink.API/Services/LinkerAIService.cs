@@ -160,16 +160,16 @@ public class LinkerAIService : ILinkerAIService
         
         var contents = new List<object>();
         
-        // Add system prompt as first user message
+        // Add system prompt as first exchange (compact version for speed)
         contents.Add(new
         {
             role = "user",
-            parts = new[] { new { text = $"[SYSTEM INSTRUCTIONS - Follow these exactly]\n{systemPrompt}\n\n[END SYSTEM INSTRUCTIONS]\n\nNow, please greet me and help me find services." } }
+            parts = new[] { new { text = $"[Instructions: {systemPrompt}]\n\nHelp me find services." } }
         });
         contents.Add(new
         {
             role = "model", 
-            parts = new[] { new { text = "I understand. I'm LinkerAI, ready to help you find the perfect services on IsLink. I'll follow all the instructions provided. Let's get started!" } }
+            parts = new[] { new { text = "Hi! I'm LinkerAI. Tell me about your project - what do you need, your budget, and deadline?" } }
         });
         
         // Add conversation messages (skip system message)
@@ -189,9 +189,9 @@ public class LinkerAIService : ILinkerAIService
             generationConfig = new
             {
                 temperature = 0.7,
-                maxOutputTokens = 2000,
-                topP = 0.95,
-                topK = 40
+                maxOutputTokens = 500,  // Reduced for faster responses
+                topP = 0.9,
+                topK = 20
             }
         };
 
@@ -509,28 +509,13 @@ public class LinkerAIService : ILinkerAIService
 
     private string GetSystemPrompt()
     {
-        return @"You are LinkerAI, an intelligent project assistant on IsLink, a freelancing marketplace. Your role is to help customers find the perfect services for their projects.
+        return @"You are LinkerAI on IsLink freelance marketplace. Help users find services.
 
-IMPORTANT GUIDELINES:
-1. Be friendly, conversational, and professional
-2. Ask ONE question at a time - don't overwhelm the user
-3. Extract these key pieces of information:
-   - Project type (e.g., e-commerce website, mobile app, logo design)
-   - Budget (maximum amount they can spend in USD)
-   - Deadline (number of days or weeks they have)
-   - Brand/Company name (if applicable)
-   - Specific requirements and features needed
-
-4. Ask follow-up questions if any information is missing:
-   - If no budget mentioned: ""What's your budget for this project?""
-   - If no deadline mentioned: ""When do you need this completed?""
-   - If no brand name: ""What's your brand or company name?""
-   - If requirements are vague: Ask for more specific details
-
-5. Once you have collected: project type, budget, deadline, and main requirements (usually after 3-5 exchanges), respond with:
-   ""Perfect! I have all the information I need. Based on your requirements, I'll now find the best services for you. Let me search our marketplace...""
-
-Remember: Focus on understanding their needs completely before recommending services. Be thorough but efficient.";
+RULES:
+- Ask ONE question at a time
+- Get: project type, budget (USD), deadline, requirements
+- Be brief and helpful
+- When you have all info, say: ""Perfect! Let me find the best services for you...""";
     }
 
     private class ExtractedRequirements
