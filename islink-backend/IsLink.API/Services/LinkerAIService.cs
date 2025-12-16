@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Collections.Concurrent;
+using Google.GenAI;
 
 namespace IsLink.API.Services;
 
@@ -16,9 +17,9 @@ public class LinkerAIService : ILinkerAIService
     private readonly IMongoCollection<ChatHistory> _chatHistories;
     private readonly ApplicationDbContext _context;
     private readonly IGigService _gigService;
-    private readonly HttpClient _httpClient;
+    private readonly Client? _geminiClient;
     private readonly string _geminiApiKey;
-    private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent";
+    private const string MODEL_NAME = "gemini-2.0-flash";
 
     // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
     private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
@@ -27,8 +28,7 @@ public class LinkerAIService : ILinkerAIService
         IMongoDatabase database,
         ApplicationDbContext context,
         IGigService gigService,
-        IConfiguration configuration,
-        IHttpClientFactory httpClientFactory)
+        IConfiguration configuration)
     {
         _chatHistories = database.GetCollection<ChatHistory>("linkerai_conversations");
         _context = context;
@@ -37,20 +37,25 @@ public class LinkerAIService : ILinkerAIService
         // Get Gemini API key - check both formats (appsettings.json and environment variable)
         _geminiApiKey = configuration["Gemini:ApiKey"] 
             ?? Environment.GetEnvironmentVariable("Gemini__ApiKey")
+            ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
             ?? "";
         
         if (string.IsNullOrEmpty(_geminiApiKey) || _geminiApiKey == "your-gemini-api-key-here")
         {
-            Console.WriteLine("⚠️ LinkerAI: Gemini API key not configured or is placeholder. Set Gemini__ApiKey environment variable on Render.");
+            Console.WriteLine("⚠️ LinkerAI: Gemini API key not configured. Set GEMINI_API_KEY or Gemini__ApiKey environment variable.");
+            _geminiClient = null;
         }
         else
         {
             var keyPreview = _geminiApiKey.Length > 10 ? _geminiApiKey.Substring(0, 10) + "..." : "***";
             Console.WriteLine($"✅ LinkerAI: Gemini API key loaded (starts with: {keyPreview})");
+            
+            // Initialize Google GenAI client with the official SDK
+            // Set the API key in the environment for the SDK
+            Environment.SetEnvironmentVariable("GEMINI_API_KEY", _geminiApiKey);
+            _geminiClient = new Client();
+            Console.WriteLine($"✅ LinkerAI: Using {MODEL_NAME} model");
         }
-        
-        // Create HTTP client for Gemini API
-        _httpClient = httpClientFactory.CreateClient();
     }
 
     public async Task<LinkerAIChatResponse> StartConversationAsync(LinkerAIStartRequest request)
@@ -153,72 +158,39 @@ public class LinkerAIService : ILinkerAIService
             Timestamp = DateTime.UtcNow
         });
 
-        // Convert to Gemini API format
-        // For gemini-pro, include system prompt as first user message (workaround)
+        // Build conversation context for Gemini
         var systemMessage = chatHistory.Messages.FirstOrDefault(m => m.Role == "system");
         var systemPrompt = systemMessage?.Content ?? GetSystemPrompt();
         
-        var contents = new List<object>();
+        // Build the full prompt with context
+        var conversationContext = new StringBuilder();
+        conversationContext.AppendLine($"[System: {systemPrompt}]");
+        conversationContext.AppendLine();
         
-        // Add system prompt as first exchange (compact version for speed)
-        contents.Add(new
-        {
-            role = "user",
-            parts = new[] { new { text = $"[Instructions: {systemPrompt}]\n\nHelp me find services." } }
-        });
-        contents.Add(new
-        {
-            role = "model", 
-            parts = new[] { new { text = "Hi! I'm LinkerAI. Tell me about your project - what do you need, your budget, and deadline?" } }
-        });
-        
-        // Add conversation messages (skip system message)
+        // Add conversation history
         foreach (var msg in chatHistory.Messages.Where(m => m.Role != "system"))
         {
-            contents.Add(new
-            {
-                role = msg.Role == "user" ? "user" : "model",
-                parts = new[] { new { text = msg.Content } }
-            });
+            var role = msg.Role == "user" ? "User" : "Assistant";
+            conversationContext.AppendLine($"{role}: {msg.Content}");
         }
-
-        // Call Gemini API
-        var requestBody = new
-        {
-            contents = contents,
-            generationConfig = new
-            {
-                temperature = 0.7,
-                maxOutputTokens = 500,  // Reduced for faster responses
-                topP = 0.9,
-                topK = 20
-            }
-        };
-
-        var jsonContent = JsonSerializer.Serialize(requestBody);
-        var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
         string aiResponse;
         try
         {
-            var apiUrl = $"{_geminiApiUrl}?key={_geminiApiKey}";
-            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API...");
-            
-            var response = await _httpClient.PostAsync(apiUrl, content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-            
-            if (!response.IsSuccessStatusCode)
+            if (_geminiClient == null)
             {
-                Console.WriteLine($"❌ Gemini API error: {response.StatusCode} - {responseContent}");
-                throw new Exception($"Gemini API returned {response.StatusCode}: {responseContent}");
+                throw new Exception("Gemini API key not configured. Set GEMINI_API_KEY environment variable.");
             }
-
-            var geminiResponse = JsonSerializer.Deserialize<GeminiApiResponse>(responseContent, new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            });
-
-            aiResponse = geminiResponse?.Candidates?.FirstOrDefault()?.Content?.Parts?.FirstOrDefault()?.Text 
+            
+            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API ({MODEL_NAME})...");
+            
+            // Use the official Google GenAI SDK
+            var response = await _geminiClient.Models.GenerateContentAsync(
+                model: MODEL_NAME,
+                contents: conversationContext.ToString()
+            );
+            
+            aiResponse = response?.Candidates?[0]?.Content?.Parts?[0]?.Text 
                 ?? "I apologize, but I couldn't generate a response. Please try again.";
             
             Console.WriteLine($"✅ LinkerAI: Got response from Gemini");
@@ -527,25 +499,5 @@ RULES:
         public string? BrandName { get; set; }
     }
 
-    // Gemini API Response Models
-    private class GeminiApiResponse
-    {
-        public List<GeminiCandidate>? Candidates { get; set; }
-    }
-
-    private class GeminiCandidate
-    {
-        public GeminiContent? Content { get; set; }
-    }
-
-    private class GeminiContent
-    {
-        public List<GeminiPart>? Parts { get; set; }
-    }
-
-    private class GeminiPart
-    {
-        public string? Text { get; set; }
-    }
 }
 

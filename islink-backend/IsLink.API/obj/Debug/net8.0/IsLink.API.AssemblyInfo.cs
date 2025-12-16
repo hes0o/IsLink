@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("IsLink.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9c9604e37005ae3c02f38b8cdd05f71bc13b74e9")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a7da1578e7ffcf98b8e5ec6c306d225103f26734")]
 [assembly: System.Reflection.AssemblyProductAttribute("IsLink.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("IsLink.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
