@@ -186,22 +186,37 @@ app.MapGet("/api/health", () => Results.Ok(new
 // Initialize Database
 // ============================================
 
-using (var scope = app.Services.CreateScope())
+// Run database migrations and seeding in background to prevent startup crashes
+_ = Task.Run(async () =>
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
-        await dbContext.Database.MigrateAsync();
-        Console.WriteLine("✅ Database migrated successfully");
+        await Task.Delay(5000); // Wait 5 seconds for app to fully start
         
-        // Seed database with demo data
-        await DbSeeder.SeedAsync(dbContext);
+        using (var scope = app.Services.CreateScope())
+        {
+            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            try
+            {
+                await dbContext.Database.MigrateAsync();
+                Console.WriteLine("✅ Database migrated successfully");
+                
+                // Seed database with demo data
+                await DbSeeder.SeedAsync(dbContext);
+                Console.WriteLine("✅ Database seeded successfully");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Database migration/seeding warning: {ex.Message}");
+                Console.WriteLine($"⚠️ Stack trace: {ex.StackTrace}");
+            }
+        }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"⚠️ Database migration warning: {ex.Message}");
+        Console.WriteLine($"⚠️ Database initialization error: {ex.Message}");
     }
-}
+});
 
 Console.WriteLine(@"
 ╔════════════════════════════════════════════════════╗
