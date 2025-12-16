@@ -22,10 +22,23 @@ const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
-    const data = await response.json();
+    let data = null;
+    let rawText = '';
+    try {
+      data = await response.json();
+    } catch {
+      rawText = await response.text().catch(() => '');
+    }
     
     if (!response.ok) {
-      throw new Error(data.message || 'Something went wrong');
+      const message =
+        data?.message ||
+        data?.Message ||
+        data?.error ||
+        data?.Error ||
+        rawText ||
+        `Request failed (${response.status})`;
+      throw new Error(message);
     }
     
     return data;

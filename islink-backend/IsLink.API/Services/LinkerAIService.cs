@@ -7,6 +7,7 @@ using MongoDB.Driver;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Collections.Concurrent;
 
 namespace IsLink.API.Services;
 
@@ -18,6 +19,9 @@ public class LinkerAIService : ILinkerAIService
     private readonly HttpClient _httpClient;
     private readonly string _geminiApiKey;
     private readonly string _geminiApiUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+    // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
+    private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
 
     public LinkerAIService(
         IMongoDatabase database,
@@ -71,7 +75,16 @@ public class LinkerAIService : ILinkerAIService
             });
         }
 
-        await _chatHistories.InsertOneAsync(chatHistory);
+        try
+        {
+            await _chatHistories.InsertOneAsync(chatHistory);
+        }
+        catch (Exception ex)
+        {
+            // MongoDB might be blocked/whitelisted on Atlas; don't break LinkerAI
+            Console.WriteLine($"⚠️ LinkerAI MongoDB insert failed, using in-memory session store. Error: {ex.Message}");
+            InMemorySessions[sessionId] = chatHistory;
+        }
 
         if (string.IsNullOrEmpty(request.InitialMessage))
         {
@@ -100,9 +113,18 @@ public class LinkerAIService : ILinkerAIService
             throw new ArgumentException("SessionId is required");
         }
 
-        var chatHistory = await _chatHistories
-            .Find(c => c.SessionId == request.SessionId && c.IsActive)
-            .FirstOrDefaultAsync();
+        ChatHistory? chatHistory = null;
+        try
+        {
+            chatHistory = await _chatHistories
+                .Find(c => c.SessionId == request.SessionId && c.IsActive)
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed, trying in-memory store. Error: {ex.Message}");
+            InMemorySessions.TryGetValue(request.SessionId, out chatHistory);
+        }
 
         if (chatHistory == null)
         {
@@ -171,7 +193,15 @@ public class LinkerAIService : ILinkerAIService
         });
 
         chatHistory.Metadata.LastActivityAt = DateTime.UtcNow;
-        await _chatHistories.ReplaceOneAsync(c => c.Id == chatHistory.Id, chatHistory);
+        try
+        {
+            await _chatHistories.ReplaceOneAsync(c => c.Id == chatHistory.Id, chatHistory);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ LinkerAI MongoDB update failed, persisting to in-memory store. Error: {ex.Message}");
+            InMemorySessions[chatHistory.SessionId] = chatHistory;
+        }
 
         // Check if AI indicates it has enough information
         var isComplete = CheckIfComplete(aiResponse, chatHistory.Messages);
@@ -194,9 +224,18 @@ public class LinkerAIService : ILinkerAIService
 
     public async Task<LinkerAIRecommendations?> GetRecommendationsAsync(string sessionId)
     {
-        var chatHistory = await _chatHistories
-            .Find(c => c.SessionId == sessionId && c.IsActive)
-            .FirstOrDefaultAsync();
+        ChatHistory? chatHistory = null;
+        try
+        {
+            chatHistory = await _chatHistories
+                .Find(c => c.SessionId == sessionId && c.IsActive)
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed in GetRecommendations, trying in-memory store. Error: {ex.Message}");
+            InMemorySessions.TryGetValue(sessionId, out chatHistory);
+        }
 
         if (chatHistory == null)
         {
