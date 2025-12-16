@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { categories, gigs } from '../../data/mockData';
+import { categories } from '../../data/mockData';
+import { gigsAPI, categoriesAPI } from '../../services/api';
 import GigCard from '../../components/gig/GigCard';
 import './Gigs.css';
 
@@ -18,66 +19,96 @@ function Gigs() {
   });
 
   const [showFilters, setShowFilters] = useState(false);
+  const [gigs, setGigs] = useState([]);
+  const [categoriesData, setCategoriesData] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Find current category
-  const currentCategory = categories.find(cat => cat.slug === categorySlug);
+  const currentCategory = useMemo(() => {
+    return categoriesData.find(cat => (cat.slug || cat.Slug) === categorySlug);
+  }, [categoriesData, categorySlug]);
 
-  // Filter and sort gigs
+  // Fetch gigs from API
+  useEffect(() => {
+    const loadGigs = async () => {
+      setLoading(true);
+      try {
+        const params = {
+          limit: 50,
+          sortBy: filters.sortBy === 'recommended' ? 'rating' : filters.sortBy
+        };
+
+        if (categorySlug) {
+          params.category = categorySlug;
+        }
+
+        if (searchQuery) {
+          params.search = searchQuery;
+        }
+
+        if (filters.minPrice) {
+          params.minPrice = Number(filters.minPrice);
+        }
+
+        if (filters.maxPrice) {
+          params.maxPrice = Number(filters.maxPrice);
+        }
+
+        if (filters.deliveryTime !== 'any') {
+          params.deliveryTime = Number(filters.deliveryTime);
+        }
+
+        const gigsResponse = await gigsAPI.getAll(params);
+        const gigsList = gigsResponse?.Data || gigsResponse?.data || [];
+        setGigs(Array.isArray(gigsList) ? gigsList : []);
+      } catch (error) {
+        console.error('Error loading gigs:', error);
+        setGigs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadGigs();
+  }, [categorySlug, searchQuery, filters]);
+
+  // Fetch categories on mount
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const categoriesResponse = await categoriesAPI.getAll();
+        if (categoriesResponse?.Data || categoriesResponse?.data) {
+          const catsList = categoriesResponse.Data || categoriesResponse.data || [];
+          setCategoriesData(Array.isArray(catsList) ? catsList : []);
+        } else {
+          setCategoriesData(categories);
+        }
+      } catch (error) {
+        console.error('Error loading categories:', error);
+        setCategoriesData(categories);
+      }
+    };
+
+    loadCategories();
+  }, []);
+
+  // Filter and sort gigs (frontend filtering for sellerLevel if needed)
   const filteredGigs = useMemo(() => {
     let result = [...gigs];
 
-    // Filter by category
-    if (categorySlug) {
-      result = result.filter(gig => {
-        const gigCategory = categories.find(cat => cat.id === gig.categoryId);
-        return gigCategory?.slug === categorySlug;
-      });
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      result = result.filter(gig => 
-        gig.title.toLowerCase().includes(query) ||
-        gig.tags.some(tag => tag.toLowerCase().includes(query))
-      );
-    }
-
-    // Filter by price range
-    if (filters.minPrice) {
-      result = result.filter(gig => gig.packages.basic.price >= Number(filters.minPrice));
-    }
-    if (filters.maxPrice) {
-      result = result.filter(gig => gig.packages.basic.price <= Number(filters.maxPrice));
-    }
-
-    // Filter by delivery time
-    if (filters.deliveryTime !== 'any') {
-      const maxDays = Number(filters.deliveryTime);
-      result = result.filter(gig => gig.packages.basic.deliveryDays <= maxDays);
-    }
-
-    // Sort
-    switch (filters.sortBy) {
-      case 'price_low':
-        result.sort((a, b) => a.packages.basic.price - b.packages.basic.price);
-        break;
-      case 'price_high':
-        result.sort((a, b) => b.packages.basic.price - a.packages.basic.price);
-        break;
-      case 'rating':
-        result.sort((a, b) => b.rating - a.rating);
-        break;
-      case 'reviews':
-        result.sort((a, b) => b.reviewCount - a.reviewCount);
-        break;
-      default:
-        // recommended - keep original order
-        break;
+    // Seller level filter (frontend only, as backend doesn't have this)
+    if (filters.sellerLevel !== 'any') {
+      if (filters.sellerLevel === 'top') {
+        result = result.filter(gig => {
+          const seller = gig.seller || gig.Seller;
+          const rating = seller?.rating || seller?.Rating || gig.rating || gig.Rating;
+          return rating >= 4.7;
+        });
+      }
     }
 
     return result;
-  }, [categorySlug, searchQuery, filters]);
+  }, [gigs, filters]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -101,7 +132,7 @@ function Gigs() {
           <Link to="/">Home</Link>
           <span className="separator">/</span>
           {currentCategory ? (
-            <span className="current">{currentCategory.name}</span>
+            <span className="current">{currentCategory.name || currentCategory.Name}</span>
           ) : searchQuery ? (
             <span className="current">Search: "{searchQuery}"</span>
           ) : (
@@ -116,8 +147,8 @@ function Gigs() {
           <h1>
             {currentCategory ? (
               <>
-                <span className="category-icon">{currentCategory.icon}</span>
-                {currentCategory.name}
+                <span className="category-icon">{currentCategory.icon || currentCategory.Icon || '📁'}</span>
+                {currentCategory.name || currentCategory.Name}
               </>
             ) : searchQuery ? (
               <>Results for "{searchQuery}"</>
@@ -127,24 +158,24 @@ function Gigs() {
           </h1>
           {currentCategory && (
             <p className="category-description">
-              Find the best {currentCategory.name.toLowerCase()} services for your project
+              Find the best {(currentCategory.name || currentCategory.Name).toLowerCase()} services for your project
             </p>
           )}
         </div>
       </div>
 
       {/* Subcategories */}
-      {currentCategory && currentCategory.subcategories.length > 0 && (
+      {currentCategory && (currentCategory.subcategories || currentCategory.Subcategories)?.length > 0 && (
         <div className="subcategories">
           <div className="container">
             <div className="subcategory-list">
-              {currentCategory.subcategories.map(sub => (
+              {(currentCategory.subcategories || currentCategory.Subcategories || []).map(sub => (
                 <Link 
-                  key={sub.id} 
-                  to={`/gigs?category=${currentCategory.slug}&sub=${sub.slug}`}
+                  key={sub.id || sub.Id} 
+                  to={`/gigs?category=${currentCategory.slug || currentCategory.Slug}&sub=${sub.slug || sub.Slug}`}
                   className="subcategory-chip"
                 >
-                  {sub.name}
+                  {sub.name || sub.Name}
                 </Link>
               ))}
             </div>
@@ -244,10 +275,15 @@ function Gigs() {
           )}
 
           {/* Gigs Grid */}
-          {filteredGigs.length > 0 ? (
+          {loading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading services...</p>
+            </div>
+          ) : filteredGigs.length > 0 ? (
             <div className="gigs-grid">
               {filteredGigs.map(gig => (
-                <GigCard key={gig.id} gig={gig} />
+                <GigCard key={gig.id || gig.Id} gig={gig} />
               ))}
             </div>
           ) : (

@@ -68,6 +68,9 @@ public class GigService : IGigService
             _ => query.OrderByDescending(g => g.Rating).ThenByDescending(g => g.ReviewCount)
         };
 
+        // Get total count before pagination
+        var totalCount = await query.CountAsync();
+
         var gigs = await query.Skip(filter.Offset).Take(filter.Limit).ToListAsync();
 
         return new GigListResponse
@@ -78,7 +81,7 @@ public class GigService : IGigService
             {
                 Limit = filter.Limit,
                 Offset = filter.Offset,
-                Total = gigs.Count
+                Total = totalCount
             }
         };
     }

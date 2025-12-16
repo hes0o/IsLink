@@ -1,12 +1,46 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { categories, gigs } from '../../data/mockData';
+import { categories } from '../../data/mockData';
+import { gigsAPI, categoriesAPI } from '../../services/api';
 import GigCard from '../../components/gig/GigCard';
 import './Home.css';
 
 function Home() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [gigs, setGigs] = useState([]);
+  const [categoriesData, setCategoriesData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        // Fetch categories from API
+        const categoriesResponse = await categoriesAPI.getAll();
+        if (categoriesResponse?.Data || categoriesResponse?.data) {
+          const catsList = categoriesResponse.Data || categoriesResponse.data || [];
+          setCategoriesData(Array.isArray(catsList) ? catsList : []);
+        } else {
+          // Fallback to mock categories
+          setCategoriesData(categories);
+        }
+
+        // Fetch featured gigs (limit to 8 for homepage)
+        const gigsResponse = await gigsAPI.getAll({ limit: 8, sortBy: 'rating' });
+        const gigsList = gigsResponse?.Data || gigsResponse?.data || [];
+        setGigs(Array.isArray(gigsList) ? gigsList : []);
+      } catch (error) {
+        console.error('Error loading data:', error);
+        // Fallback to mock data on error
+        setCategoriesData(categories);
+        setGigs([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -82,16 +116,16 @@ function Home() {
         <div className="container">
           <h2 className="section-title">Explore Popular Categories</h2>
           <div className="categories-grid">
-            {categories.map((category) => (
+            {categoriesData.map((category) => (
               <Link
-                key={category.id}
-                to={`/gigs?category=${category.slug}`}
+                key={category.id || category.Id}
+                to={`/gigs?category=${category.slug || category.Slug}`}
                 className="category-card"
               >
-                <span className="category-icon">{category.icon}</span>
-                <h3 className="category-name">{category.name}</h3>
+                <span className="category-icon">{category.icon || category.Icon || '📁'}</span>
+                <h3 className="category-name">{category.name || category.Name}</h3>
                 <p className="category-count">
-                  {Math.floor(Math.random() * 1000) + 200}+ services
+                  {category.serviceCount || category.ServiceCount || Math.floor(Math.random() * 1000) + 200}+ services
                 </p>
               </Link>
             ))}
@@ -108,11 +142,22 @@ function Home() {
               View All →
             </Link>
           </div>
-          <div className="gigs-grid">
-            {gigs.map((gig) => (
-              <GigCard key={gig.id} gig={gig} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading services...</p>
+            </div>
+          ) : gigs.length > 0 ? (
+            <div className="gigs-grid">
+              {gigs.map((gig) => (
+                <GigCard key={gig.id || gig.Id} gig={gig} />
+              ))}
+            </div>
+          ) : (
+            <div className="no-results">
+              <p>No services available at the moment.</p>
+            </div>
+          )}
         </div>
       </section>
 

@@ -6,6 +6,29 @@ function GigCard({ gig }) {
   const [isLiked, setIsLiked] = useState(false);
   const [currentImage, setCurrentImage] = useState(0);
 
+  // Normalize gig data to handle both camelCase and PascalCase from API
+  const normalizedGig = {
+    id: gig.id || gig.Id,
+    slug: gig.slug || gig.Slug,
+    title: gig.title || gig.Title,
+    images: gig.images || gig.Images || [],
+    rating: gig.rating || gig.Rating || 0,
+    reviewCount: gig.reviewCount || gig.ReviewCount || 0,
+    seller: {
+      username: gig.seller?.username || gig.seller?.Username || gig.Seller?.username || gig.Seller?.Username,
+      avatar: gig.seller?.avatar || gig.seller?.avatarUrl || gig.seller?.AvatarUrl || gig.Seller?.avatar || gig.Seller?.avatarUrl || gig.Seller?.AvatarUrl,
+      rating: gig.seller?.rating || gig.seller?.Rating || gig.Seller?.rating || gig.Seller?.Rating || 0
+    },
+    packages: {
+      basic: {
+        price: gig.packages?.basic?.price || gig.packages?.Basic?.price || gig.packages?.Basic?.Price || gig.Packages?.basic?.price || gig.Packages?.Basic?.price || gig.Packages?.Basic?.Price || 0
+      }
+    }
+  };
+
+  const images = normalizedGig.images || [];
+  const firstImage = images.length > 0 ? images[0] : 'https://via.placeholder.com/300x200?text=IsLink+Gig';
+
   const handleLike = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -15,29 +38,33 @@ function GigCard({ gig }) {
   const nextImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentImage((prev) => (prev + 1) % gig.images.length);
+    if (images.length > 1) {
+      setCurrentImage((prev) => (prev + 1) % images.length);
+    }
   };
 
   const prevImage = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setCurrentImage((prev) => (prev - 1 + gig.images.length) % gig.images.length);
+    if (images.length > 1) {
+      setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+    }
   };
 
   return (
-    <Link to={`/gig/${gig.slug}`} className="gig-card">
+    <Link to={`/gig/${normalizedGig.slug}`} className="gig-card">
       {/* Image Slider */}
       <div className="gig-card-image">
         <img 
-          src={gig.images[currentImage]} 
-          alt={gig.title}
+          src={images[currentImage] || firstImage} 
+          alt={normalizedGig.title}
           onError={(e) => {
             e.target.src = 'https://via.placeholder.com/300x200?text=IsLink+Gig';
           }}
         />
         
         {/* Navigation arrows for multiple images */}
-        {gig.images.length > 1 && (
+        {images.length > 1 && (
           <>
             <button className="image-nav image-nav-prev" onClick={prevImage}>
               ‹
@@ -46,7 +73,7 @@ function GigCard({ gig }) {
               ›
             </button>
             <div className="image-dots">
-              {gig.images.map((_, index) => (
+              {images.map((_, index) => (
                 <span 
                   key={index} 
                   className={`dot ${index === currentImage ? 'active' : ''}`}
@@ -73,36 +100,36 @@ function GigCard({ gig }) {
         {/* Seller Info */}
         <div className="gig-seller">
           <img 
-            src={gig.seller?.avatar} 
-            alt={gig.seller?.username}
+            src={normalizedGig.seller.avatar || 'https://via.placeholder.com/40x40?text=U'} 
+            alt={normalizedGig.seller.username}
             className="seller-avatar"
             onError={(e) => {
               e.target.src = 'https://via.placeholder.com/40x40?text=U';
             }}
           />
           <div className="seller-info">
-            <span className="seller-name">{gig.seller?.username}</span>
-            {gig.seller?.rating >= 4.7 && (
+            <span className="seller-name">{normalizedGig.seller.username || 'Unknown'}</span>
+            {normalizedGig.seller.rating >= 4.7 && (
               <span className="seller-badge">Top Rated</span>
             )}
           </div>
         </div>
 
         {/* Gig Title */}
-        <h3 className="gig-title">{gig.title}</h3>
+        <h3 className="gig-title">{normalizedGig.title}</h3>
 
         {/* Rating */}
         <div className="gig-rating">
           <span className="star">★</span>
-          <span className="rating-value">{gig.rating.toFixed(1)}</span>
-          <span className="rating-count">({gig.reviewCount})</span>
+          <span className="rating-value">{normalizedGig.rating.toFixed(1)}</span>
+          <span className="rating-count">({normalizedGig.reviewCount})</span>
         </div>
       </div>
 
       {/* Card Footer */}
       <div className="gig-card-footer">
         <span className="starting-at">Starting at</span>
-        <span className="gig-price">${gig.packages.basic.price}</span>
+        <span className="gig-price">${normalizedGig.packages.basic.price.toFixed(2)}</span>
       </div>
     </Link>
   );
