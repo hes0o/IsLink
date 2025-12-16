@@ -9,6 +9,7 @@ import { Login, Register } from './pages/Auth';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Messages from './pages/Messages';
+import LinkerAI from './pages/LinkerAI';
 import NotFound from './pages/NotFound';
 import './styles/variables.css';
 import './App.css';
@@ -42,6 +43,7 @@ function App() {
         <Route path="gigs" element={<Gigs />} />
         <Route path="gig/:slug" element={<GigDetails />} />
         <Route path="profile/:username" element={<Profile />} />
+        <Route path="linkerai" element={<LinkerAI />} />
         <Route path="gigs/create" element={
           <ProtectedRoute>
             <CreateGig />

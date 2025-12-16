@@ -194,6 +194,24 @@ export const notificationsAPI = {
   }),
 };
 
+// ============================================
+// LINKERAI API
+// ============================================
+
+export const linkerAIAPI = {
+  start: (initialMessage) => apiRequest('/linkerai/start', {
+    method: 'POST',
+    body: JSON.stringify({ initialMessage }),
+  }),
+
+  chat: (sessionId, message) => apiRequest('/linkerai/chat', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId, message }),
+  }),
+
+  getRecommendations: (sessionId) => apiRequest(`/linkerai/recommendations/${sessionId}`),
+};
+
 export default {
   auth: authAPI,
   users: usersAPI,
@@ -203,4 +221,5 @@ export default {
   reviews: reviewsAPI,
   messages: messagesAPI,
   notifications: notificationsAPI,
+  linkerAI: linkerAIAPI,
 };

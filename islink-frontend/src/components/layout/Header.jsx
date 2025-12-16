@@ -65,6 +65,7 @@ function Header() {
         {/* Navigation */}
         <nav className={`nav ${isMenuOpen ? 'nav-open' : ''}`}>
           <Link to="/gigs" className="nav-link">Explore</Link>
+          <Link to="/linkerai" className="nav-link">🤖 LinkerAI</Link>
           
           {isAuthenticated ? (
             <>
