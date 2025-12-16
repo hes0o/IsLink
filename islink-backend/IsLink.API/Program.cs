@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Threading;
 using MongoDB.Driver;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -186,37 +187,39 @@ app.MapGet("/api/health", () => Results.Ok(new
 // Initialize Database
 // ============================================
 
-// Run database migrations and seeding in background to prevent startup crashes
-_ = Task.Run(async () =>
+using (var scope = app.Services.CreateScope())
 {
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
     try
     {
-        await Task.Delay(5000); // Wait 5 seconds for app to fully start
-        
-        using (var scope = app.Services.CreateScope())
+        // Run migrations with timeout to prevent hanging
+        using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2)))
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            try
+            await dbContext.Database.MigrateAsync(cts.Token);
+            Console.WriteLine("✅ Database migrated successfully");
+        }
+        
+        // Seed database with demo data (with timeout)
+        try
+        {
+            using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
             {
-                await dbContext.Database.MigrateAsync();
-                Console.WriteLine("✅ Database migrated successfully");
-                
-                // Seed database with demo data
                 await DbSeeder.SeedAsync(dbContext);
                 Console.WriteLine("✅ Database seeded successfully");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"⚠️ Database migration/seeding warning: {ex.Message}");
-                Console.WriteLine($"⚠️ Stack trace: {ex.StackTrace}");
-            }
+        }
+        catch (Exception seedEx)
+        {
+            // Don't fail startup if seeding fails
+            Console.WriteLine($"⚠️ Database seeding warning (non-fatal): {seedEx.Message}");
         }
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"⚠️ Database initialization error: {ex.Message}");
+        // Don't fail startup if migration/seeding fails
+        Console.WriteLine($"⚠️ Database initialization warning (non-fatal): {ex.Message}");
     }
-});
+}
 
 Console.WriteLine(@"
 ╔════════════════════════════════════════════════════╗
