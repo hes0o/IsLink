@@ -22,12 +22,25 @@ builder.Services.Configure<CorsSettings>(builder.Configuration.GetSection("CorsS
 // ============================================
 
 // PostgreSQL with Entity Framework Core
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQL")));
+if (builder.Environment.IsEnvironment("Test"))
+{
+    // Integration/smoke tests should not require an external Postgres instance.
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseInMemoryDatabase("IsLink_TestDb"));
+}
+else
+{
+    builder.Services.AddDbContext<ApplicationDbContext>(options =>
+        options.UseNpgsql(builder.Configuration.GetConnectionString("PostgreSQL")));
+}
 
 // MongoDB
 builder.Services.AddSingleton<IMongoClient>(sp =>
-    new MongoClient(builder.Configuration.GetConnectionString("MongoDB")));
+{
+    // Use a safe default so the API can boot even if MongoDB conn string is missing in some environments.
+    var mongoConn = builder.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
+    return new MongoClient(mongoConn);
+});
 
 builder.Services.AddScoped<IMongoDatabase>(sp =>
 {
@@ -190,32 +203,46 @@ app.MapGet("/api/health", () => Results.Ok(new
 // Initialize Database
 // ============================================
 
-using (var scope = app.Services.CreateScope())
+// For local/integration tests we want fast boot and no external DB requirement.
+// - Set ASPNETCORE_ENVIRONMENT=Test (recommended for tests), or
+// - Set SKIP_DB_INIT=true (useful for quick local smoke runs)
+var skipDbInit =
+    app.Environment.IsEnvironment("Test") ||
+    string.Equals(Environment.GetEnvironmentVariable("SKIP_DB_INIT"), "true", StringComparison.OrdinalIgnoreCase);
+
+if (!skipDbInit)
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        // Run migrations
-        await dbContext.Database.MigrateAsync();
-        Console.WriteLine("✅ Database migrated successfully");
-        
-        // Seed database with demo data
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         try
         {
-            await DbSeeder.SeedAsync(dbContext);
-            Console.WriteLine("✅ Database seeded successfully");
+            // Run migrations
+            await dbContext.Database.MigrateAsync();
+            Console.WriteLine("✅ Database migrated successfully");
+
+            // Seed database with demo data
+            try
+            {
+                await DbSeeder.SeedAsync(dbContext);
+                Console.WriteLine("✅ Database seeded successfully");
+            }
+            catch (Exception seedEx)
+            {
+                // Don't fail startup if seeding fails
+                Console.WriteLine($"⚠️ Database seeding warning (non-fatal): {seedEx.Message}");
+            }
         }
-        catch (Exception seedEx)
+        catch (Exception ex)
         {
-            // Don't fail startup if seeding fails
-            Console.WriteLine($"⚠️ Database seeding warning (non-fatal): {seedEx.Message}");
+            // Don't fail startup if migration/seeding fails
+            Console.WriteLine($"⚠️ Database initialization warning (non-fatal): {ex.Message}");
         }
     }
-    catch (Exception ex)
-    {
-        // Don't fail startup if migration/seeding fails
-        Console.WriteLine($"⚠️ Database initialization warning (non-fatal): {ex.Message}");
-    }
+}
+else
+{
+    Console.WriteLine("ℹ️ Skipping DB initialization (Test env / SKIP_DB_INIT=true)");
 }
 
 Console.WriteLine(@"
@@ -230,4 +257,7 @@ Console.WriteLine(@"
 ");
 
 app.Run();
+
+// Required for integration tests via WebApplicationFactory<T>
+public partial class Program { }
 

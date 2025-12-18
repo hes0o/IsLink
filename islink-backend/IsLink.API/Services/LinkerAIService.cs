@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Text;
 using System.Collections.Concurrent;
 using Google.GenAI;
+using System.Net.Http.Headers;
 
 namespace IsLink.API.Services;
 
@@ -20,6 +21,10 @@ public class LinkerAIService : ILinkerAIService
     private readonly Client? _geminiClient;
     private readonly string _geminiApiKey;
     private const string MODEL_NAME = "gemini-2.0-flash";
+    private readonly HttpClient _httpClient;
+    private readonly string _groqApiKey;
+    private const string GROQ_MODEL_NAME = "llama-3.1-70b-versatile";
+    private readonly string _aiProviderMode;
 
     // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
     private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
@@ -28,11 +33,20 @@ public class LinkerAIService : ILinkerAIService
         IMongoDatabase database,
         ApplicationDbContext context,
         IGigService gigService,
+        IHttpClientFactory httpClientFactory,
         IConfiguration configuration)
     {
         _chatHistories = database.GetCollection<ChatHistory>("linkerai_conversations");
         _context = context;
         _gigService = gigService;
+        _httpClient = httpClientFactory.CreateClient();
+        _aiProviderMode = (Environment.GetEnvironmentVariable("AI_PROVIDER") ?? configuration["AI_PROVIDER"] ?? "auto").Trim().ToLowerInvariant();
+        
+        // Groq API key (preferred free-tier provider)
+        _groqApiKey = configuration["Groq:ApiKey"]
+            ?? Environment.GetEnvironmentVariable("Groq__ApiKey")
+            ?? Environment.GetEnvironmentVariable("GROQ_API_KEY")
+            ?? "";
         
         // Get Gemini API key - check both formats (appsettings.json and environment variable)
         _geminiApiKey = configuration["Gemini:ApiKey"] 
@@ -63,6 +77,148 @@ public class LinkerAIService : ILinkerAIService
                 Console.WriteLine($"❌ LinkerAI: Failed to initialize Gemini client: {ex.Message}");
                 _geminiClient = null;
             }
+        }
+    }
+
+    private sealed record AIResult(bool Success, string Text, string Provider, bool IsRateLimitedOrQuota, string? ErrorMessage);
+
+    private async Task<AIResult> TryGetAiResponseAsync(string conversationContext)
+    {
+        // Decide provider order
+        var order = _aiProviderMode switch
+        {
+            "groq" => new[] { "groq" },
+            "gemini" => new[] { "gemini" },
+            "fallback" => Array.Empty<string>(),
+            _ => new[] { "groq", "gemini" } // auto
+        };
+
+        foreach (var provider in order)
+        {
+            if (provider == "groq")
+            {
+                var groq = await TryGroqAsync(conversationContext);
+                if (groq.Success || groq.IsRateLimitedOrQuota == false)
+                {
+                    // Success OR a non-rate-limit failure (return it to caller)
+                    return groq;
+                }
+
+                // Rate-limited: try next provider
+                continue;
+            }
+
+            if (provider == "gemini")
+            {
+                var gemini = await TryGeminiAsync(conversationContext);
+                if (gemini.Success || gemini.IsRateLimitedOrQuota == false)
+                {
+                    return gemini;
+                }
+                continue;
+            }
+        }
+
+        return new AIResult(false, "", "fallback", true, "All AI providers unavailable");
+    }
+
+    private async Task<AIResult> TryGeminiAsync(string conversationContext)
+    {
+        try
+        {
+            if (_geminiClient == null)
+            {
+                return new AIResult(false, "", "gemini", false, "Gemini API key not configured");
+            }
+
+            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API ({MODEL_NAME})...");
+
+            var response = await _geminiClient.Models.GenerateContentAsync(
+                model: MODEL_NAME,
+                contents: conversationContext
+            );
+
+            var text = response?.Candidates?[0]?.Content?.Parts?[0]?.Text;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return new AIResult(false, "", "gemini", false, "Empty Gemini response");
+            }
+
+            Console.WriteLine("✅ LinkerAI: Got response from Gemini");
+            return new AIResult(true, text, "gemini", false, null);
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message ?? "Gemini error";
+            Console.WriteLine($"❌ LinkerAI Gemini error: {msg}");
+            var isQuota =
+                msg.Contains("quota", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("429", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("RESOURCE_EXHAUSTED", StringComparison.OrdinalIgnoreCase);
+            return new AIResult(false, "", "gemini", isQuota, msg);
+        }
+    }
+
+    private async Task<AIResult> TryGroqAsync(string conversationContext)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(_groqApiKey))
+            {
+                return new AIResult(false, "", "groq", false, "Groq API key not configured");
+            }
+
+            Console.WriteLine($"🤖 LinkerAI: Calling Groq API ({GROQ_MODEL_NAME})...");
+
+            using var req = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions");
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _groqApiKey);
+
+            var payload = new
+            {
+                model = GROQ_MODEL_NAME,
+                messages = new[]
+                {
+                    new { role = "user", content = conversationContext }
+                },
+                temperature = 0.4,
+                max_tokens = 500
+            };
+
+            req.Content = JsonContent.Create(payload);
+            var resp = await _httpClient.SendAsync(req);
+            var body = await resp.Content.ReadAsStringAsync();
+
+            if (!resp.IsSuccessStatusCode)
+            {
+                var isRate = (int)resp.StatusCode == 429 || body.Contains("rate", StringComparison.OrdinalIgnoreCase) || body.Contains("quota", StringComparison.OrdinalIgnoreCase);
+                return new AIResult(false, "", "groq", isRate, $"Groq HTTP {(int)resp.StatusCode}: {body}");
+            }
+
+            using var doc = JsonDocument.Parse(body);
+            var content = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString();
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                return new AIResult(false, "", "groq", false, "Empty Groq response");
+            }
+
+            Console.WriteLine("✅ LinkerAI: Got response from Groq");
+            return new AIResult(true, content, "groq", false, null);
+        }
+        catch (Exception ex)
+        {
+            var msg = ex.Message ?? "Groq error";
+            Console.WriteLine($"❌ LinkerAI Groq error: {msg}");
+            var isRate =
+                msg.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("quota", StringComparison.OrdinalIgnoreCase) ||
+                msg.Contains("429", StringComparison.OrdinalIgnoreCase);
+            return new AIResult(false, "", "groq", isRate, msg);
         }
     }
 
@@ -182,33 +338,10 @@ public class LinkerAIService : ILinkerAIService
             conversationContext.AppendLine($"{role}: {msg.Content}");
         }
 
-        string aiResponse;
-        try
-        {
-            if (_geminiClient == null)
-            {
-                throw new Exception("Gemini API key not configured. Set GEMINI_API_KEY environment variable.");
-            }
-            
-            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API ({MODEL_NAME})...");
-            
-            // Use the official Google GenAI SDK
-            var response = await _geminiClient.Models.GenerateContentAsync(
-                model: MODEL_NAME,
-                contents: conversationContext.ToString()
-            );
-            
-            aiResponse = response?.Candidates?[0]?.Content?.Parts?[0]?.Text 
-                ?? "I apologize, but I couldn't generate a response. Please try again.";
-            
-            Console.WriteLine($"✅ LinkerAI: Got response from Gemini");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"❌ LinkerAI Gemini error: {ex.Message}");
-            // Provide a helpful fallback response instead of crashing
-            aiResponse = $"I'm having trouble connecting to my AI backend right now. Error: {ex.Message}. Please check that the Gemini API key is configured correctly on the server (environment variable: Gemini__ApiKey).";
-        }
+        var aiResult = await TryGetAiResponseAsync(conversationContext.ToString());
+        var aiResponse = aiResult.Text;
+        var aiHadError = !aiResult.Success;
+        var aiErrorMessage = aiResult.ErrorMessage ?? string.Empty;
 
         // Add AI response to history
         chatHistory.Messages.Add(new ChatMessage
@@ -229,13 +362,49 @@ public class LinkerAIService : ILinkerAIService
             InMemorySessions[chatHistory.SessionId] = chatHistory;
         }
 
-        // Check if AI indicates it has enough information
-        var isComplete = CheckIfComplete(aiResponse, chatHistory.Messages);
+        // If Gemini is down/quota-limited, fall back to deterministic requirement extraction + marketplace matching.
+        // This makes LinkerAI usable on free tiers.
+        var isQuotaOrRateLimit = aiHadError && aiResult.IsRateLimitedOrQuota;
+
+        var requirements = ExtractRequirements(chatHistory.Messages);
+        var missingInfo = new List<string>();
+        if (string.IsNullOrWhiteSpace(requirements.ProjectType)) missingInfo.Add("project type");
+        if (!requirements.Budget.HasValue) missingInfo.Add("budget");
+        if (!requirements.DeadlineDays.HasValue) missingInfo.Add("deadline");
+
+        var hasMinimumInfo = missingInfo.Count == 0;
+
+        // Check if AI indicates it has enough information (normal path)
+        var isComplete = !aiHadError && CheckIfComplete(aiResponse, chatHistory.Messages);
 
         LinkerAIRecommendations? recommendations = null;
-        if (isComplete)
+        if (isComplete || (isQuotaOrRateLimit && hasMinimumInfo))
         {
             recommendations = await GenerateRecommendationsAsync(chatHistory);
+            isComplete = true;
+        }
+
+        if (aiHadError)
+        {
+            if (isQuotaOrRateLimit)
+            {
+                // Friendly response when quota is hit; keep the conversation moving.
+                aiResponse = hasMinimumInfo
+                    ? $"AI provider ({aiResult.Provider}) is currently rate-limited/quota-exceeded. I can still recommend services using marketplace matching. Here are results based on your budget/deadline."
+                    : $"AI provider ({aiResult.Provider}) is currently rate-limited/quota-exceeded. No problem — I can still help without it. Please tell me your {string.Join(" and ", missingInfo)}.";
+            }
+            else
+            {
+                // Non-quota errors: still return a clear failure so frontend can show it properly.
+                return new LinkerAIChatResponse
+                {
+                    Success = false,
+                    SessionId = request.SessionId,
+                    Message = $"LinkerAI backend error ({aiResult.Provider}): {aiErrorMessage}",
+                    IsComplete = false,
+                    MissingInfo = missingInfo
+                };
+            }
         }
 
         return new LinkerAIChatResponse
@@ -244,7 +413,8 @@ public class LinkerAIService : ILinkerAIService
             SessionId = request.SessionId,
             Message = aiResponse,
             IsComplete = isComplete,
-            Recommendations = recommendations
+            Recommendations = recommendations,
+            MissingInfo = missingInfo
         };
     }
 
@@ -433,11 +603,28 @@ public class LinkerAIService : ILinkerAIService
 
     private decimal? ExtractBudget(string text)
     {
-        var match = Regex.Match(text, @"\$?(\d+)\s*(?:dollars?|USD|usd|\$|budget)");
-        if (match.Success && decimal.TryParse(match.Groups[1].Value, out var budget))
+        // Prefer explicit currency formats first: "$500", "$ 500", "500$"
+        var match = Regex.Match(text, @"\$\s*([0-9]+(?:\.[0-9]+)?)");
+        if (match.Success && decimal.TryParse(match.Groups[1].Value, out var budget1))
         {
-            return budget;
+            return budget1;
         }
+
+        match = Regex.Match(text, @"([0-9]+(?:\.[0-9]+)?)\s*\$");
+        if (match.Success && decimal.TryParse(match.Groups[1].Value, out var budget2))
+        {
+            return budget2;
+        }
+
+        // Then try keyword-based: "budget is 500", "max 500", "up to 500 USD"
+        match = Regex.Match(
+            text,
+            @"(?i)\b(?:budget|max|up to|not more than|no more than)\b[^\d]{0,12}([0-9]+(?:\.[0-9]+)?)\s*(?:usd|dollars?)?\b");
+        if (match.Success && decimal.TryParse(match.Groups[1].Value, out var budget3))
+        {
+            return budget3;
+        }
+
         return null;
     }
 

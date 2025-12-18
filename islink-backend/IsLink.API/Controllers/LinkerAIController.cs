@@ -11,10 +11,12 @@ namespace IsLink.API.Controllers;
 public class LinkerAIController : ControllerBase
 {
     private readonly ILinkerAIService _linkerAIService;
+    private readonly IConfiguration _configuration;
 
-    public LinkerAIController(ILinkerAIService linkerAIService)
+    public LinkerAIController(ILinkerAIService linkerAIService, IConfiguration configuration)
     {
         _linkerAIService = linkerAIService;
+        _configuration = configuration;
     }
 
     /// <summary>
@@ -94,6 +96,32 @@ public class LinkerAIController : ControllerBase
         {
             return BadRequest(new { Success = false, Message = ex.Message });
         }
+    }
+
+    /// <summary>
+    /// Debug/status endpoint to verify which AI provider is configured in the current environment.
+    /// </summary>
+    [HttpGet("status")]
+    public ActionResult GetStatus()
+    {
+        var provider = (Environment.GetEnvironmentVariable("AI_PROVIDER") ?? _configuration["AI_PROVIDER"] ?? "auto").Trim();
+        var geminiKey =
+            _configuration["Gemini:ApiKey"] ??
+            Environment.GetEnvironmentVariable("Gemini__ApiKey") ??
+            Environment.GetEnvironmentVariable("GEMINI_API_KEY");
+        var groqKey =
+            _configuration["Groq:ApiKey"] ??
+            Environment.GetEnvironmentVariable("Groq__ApiKey") ??
+            Environment.GetEnvironmentVariable("GROQ_API_KEY");
+
+        return Ok(new
+        {
+            Success = true,
+            ProviderMode = provider,
+            GeminiConfigured = !string.IsNullOrWhiteSpace(geminiKey),
+            GroqConfigured = !string.IsNullOrWhiteSpace(groqKey),
+            Timestamp = DateTime.UtcNow
+        });
     }
 
     private Guid? GetCurrentUserId()

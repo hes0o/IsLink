@@ -33,6 +33,9 @@
     
     <!-- Google Gemini AI -->
     <PackageReference Include="Google.GenAI" Version="0.9.0" />
+    
+    <!-- Test environment: allow API to boot without Postgres -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.10" />
   </ItemGroup>
 
 </Project>
