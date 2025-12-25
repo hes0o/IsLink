@@ -1,9 +1,1 @@
-export { default as ChatBot } from './ChatBot';
-
-
-
-
-
-
-
-
+// Common components export
