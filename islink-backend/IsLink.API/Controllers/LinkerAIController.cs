@@ -8,6 +8,7 @@ namespace IsLink.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LinkerAIController : ControllerBase
 {
     private readonly ILinkerAIService _linkerAIService;

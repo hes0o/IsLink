@@ -84,8 +84,6 @@ function LinkerAI() {
     console.log("Switching to session", sessId);
   };
 
-
-
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/600x400?text=No+Image';
     if (url.startsWith('http')) return url;
@@ -102,6 +100,13 @@ function LinkerAI() {
     const pascal = key.charAt(0).toUpperCase() + key.slice(1);
     if (obj[pascal] !== undefined) return obj[pascal];
     return undefined;
+  };
+
+  // NEW: Safe number formatting
+  const safeFixed = (val, digits = 2) => {
+    const num = Number(val);
+    if (isNaN(num)) return '0.00';
+    return num.toFixed(digits);
   };
 
   const scrollToBottom = () => {
@@ -316,16 +321,16 @@ function LinkerAI() {
               <div className="budget-breakdown">
                 <div className="budget-item">
                   <span>Total Budget:</span>
-                  <strong>${getRecProp(getRecProp(recommendations, 'budget'), 'totalBudget')?.toFixed(2)}</strong>
+                  <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalBudget'))}</strong>
                 </div>
                 <div className="budget-item">
                   <span>Total Cost:</span>
-                  <strong>${getRecProp(getRecProp(recommendations, 'budget'), 'totalCost')?.toFixed(2)}</strong>
+                  <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalCost'))}</strong>
                 </div>
                 <div className="budget-item highlight">
                   <span>Remaining:</span>
                   <strong className={getRecProp(getRecProp(recommendations, 'budget'), 'remaining') >= 0 ? 'positive' : 'negative'}>
-                    ${getRecProp(getRecProp(recommendations, 'budget'), 'remaining')?.toFixed(2)}
+                    ${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'remaining'))}
                   </strong>
                 </div>
                 <div className="service-costs">
@@ -333,7 +338,7 @@ function LinkerAI() {
                   <ul>
                     {(getRecProp(getRecProp(recommendations, 'budget'), 'serviceCosts') || []).map((cost, idx) => (
                       <li key={idx}>
-                        {getRecProp(cost, 'serviceName')}: <strong>${getRecProp(cost, 'cost')?.toFixed(2)}</strong>
+                        {getRecProp(cost, 'serviceName')}: <strong>${safeFixed(getRecProp(cost, 'cost'))}</strong>
                       </li>
                     ))}
                   </ul>
@@ -379,9 +384,9 @@ function LinkerAI() {
                         <p className="service-category">{getRecProp(service, 'category')}</p>
                         <p className="service-seller">by {getRecProp(service, 'sellerName')}</p>
                         <div className="service-rating">
-                          ⭐ {getRecProp(service, 'rating')?.toFixed(1)} ({getRecProp(service, 'reviewCount')} reviews)
+                          ⭐ {safeFixed(getRecProp(service, 'rating'), 1)} ({getRecProp(service, 'reviewCount')} reviews)
                         </div>
-                        <p className="service-price">${getRecProp(service, 'price')?.toFixed(2)}</p>
+                        <p className="service-price">${safeFixed(getRecProp(service, 'price'))}</p>
                         <p className="service-delivery">Delivery: {getRecProp(service, 'deliveryDays')} days</p>
                         <p className="service-reason"><em>Why: {getRecProp(service, 'reason')}</em></p>
                         <span className="btn-view">View Service</span>
