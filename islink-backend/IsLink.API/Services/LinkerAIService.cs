@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Collections.Concurrent;
-using Google.GenAI;
 using System.Net.Http.Headers;
 
 namespace IsLink.API.Services;
@@ -18,13 +17,9 @@ public class LinkerAIService : ILinkerAIService
     private readonly IMongoCollection<ChatHistory> _chatHistories;
     private readonly ApplicationDbContext _context;
     private readonly IGigService _gigService;
-    private readonly Client? _geminiClient;
-    private readonly string _geminiApiKey;
-    private const string MODEL_NAME = "gemini-2.0-flash";
     private readonly HttpClient _httpClient;
     private readonly string _groqApiKey;
-    private const string GROQ_MODEL_NAME = "llama-3.1-70b-versatile";
-    private readonly string _aiProviderMode;
+    private const string GROQ_MODEL_NAME = "llama-3.3-70b-versatile";
 
     // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
     private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
@@ -40,124 +35,28 @@ public class LinkerAIService : ILinkerAIService
         _context = context;
         _gigService = gigService;
         _httpClient = httpClientFactory.CreateClient();
-        _aiProviderMode = (Environment.GetEnvironmentVariable("AI_PROVIDER") ?? configuration["AI_PROVIDER"] ?? "auto").Trim().ToLowerInvariant();
         
-        // Groq API key (preferred free-tier provider)
+        // Groq API key
         _groqApiKey = configuration["Groq:ApiKey"]
             ?? Environment.GetEnvironmentVariable("Groq__ApiKey")
             ?? Environment.GetEnvironmentVariable("GROQ_API_KEY")
             ?? "";
         
-        // Get Gemini API key - check both formats (appsettings.json and environment variable)
-        _geminiApiKey = configuration["Gemini:ApiKey"] 
-            ?? Environment.GetEnvironmentVariable("Gemini__ApiKey")
-            ?? Environment.GetEnvironmentVariable("GEMINI_API_KEY")
-            ?? "";
-        
-        if (string.IsNullOrEmpty(_geminiApiKey) || _geminiApiKey == "your-gemini-api-key-here")
+        if (string.IsNullOrWhiteSpace(_groqApiKey))
         {
-            Console.WriteLine("⚠️ LinkerAI: Gemini API key not configured. Set GEMINI_API_KEY or Gemini__ApiKey environment variable.");
-            _geminiClient = null;
+            Console.WriteLine("⚠️ LinkerAI: Groq API key not configured. Set GROQ_API_KEY or Groq:ApiKey in appsettings.json");
         }
         else
         {
-            try
-            {
-                var keyPreview = _geminiApiKey.Length > 10 ? _geminiApiKey.Substring(0, 10) + "..." : "***";
-                Console.WriteLine($"✅ LinkerAI: Gemini API key loaded (starts with: {keyPreview})");
-                
-                // Initialize Google GenAI client with the official SDK
-                // Set the API key in the environment for the SDK
-                Environment.SetEnvironmentVariable("GEMINI_API_KEY", _geminiApiKey);
-                _geminiClient = new Client(apiKey: _geminiApiKey);
-                Console.WriteLine($"✅ LinkerAI: Using {MODEL_NAME} model");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ LinkerAI: Failed to initialize Gemini client: {ex.Message}");
-                _geminiClient = null;
-            }
+            Console.WriteLine("✅ LinkerAI: Groq API key loaded");
         }
     }
 
-    private sealed record AIResult(bool Success, string Text, string Provider, bool IsRateLimitedOrQuota, string? ErrorMessage);
+    private sealed record AIResult(bool Success, string Text, string? ErrorMessage);
 
     private async Task<AIResult> TryGetAiResponseAsync(string conversationContext)
     {
-        // Decide provider order
-        var order = _aiProviderMode switch
-        {
-            "groq" => new[] { "groq" },
-            "gemini" => new[] { "gemini" },
-            "fallback" => Array.Empty<string>(),
-            _ => new[] { "groq", "gemini" } // auto
-        };
-
-        foreach (var provider in order)
-        {
-            if (provider == "groq")
-            {
-                var groq = await TryGroqAsync(conversationContext);
-                if (groq.Success || groq.IsRateLimitedOrQuota == false)
-                {
-                    // Success OR a non-rate-limit failure (return it to caller)
-                    return groq;
-                }
-
-                // Rate-limited: try next provider
-                continue;
-            }
-
-            if (provider == "gemini")
-            {
-                var gemini = await TryGeminiAsync(conversationContext);
-                if (gemini.Success || gemini.IsRateLimitedOrQuota == false)
-                {
-                    return gemini;
-                }
-                continue;
-            }
-        }
-
-        return new AIResult(false, "", "fallback", true, "All AI providers unavailable");
-    }
-
-    private async Task<AIResult> TryGeminiAsync(string conversationContext)
-    {
-        try
-        {
-            if (_geminiClient == null)
-            {
-                return new AIResult(false, "", "gemini", false, "Gemini API key not configured");
-            }
-
-            Console.WriteLine($"🤖 LinkerAI: Calling Gemini API ({MODEL_NAME})...");
-
-            var response = await _geminiClient.Models.GenerateContentAsync(
-                model: MODEL_NAME,
-                contents: conversationContext
-            );
-
-            var text = response?.Candidates?[0]?.Content?.Parts?[0]?.Text;
-            if (string.IsNullOrWhiteSpace(text))
-            {
-                return new AIResult(false, "", "gemini", false, "Empty Gemini response");
-            }
-
-            Console.WriteLine("✅ LinkerAI: Got response from Gemini");
-            return new AIResult(true, text, "gemini", false, null);
-        }
-        catch (Exception ex)
-        {
-            var msg = ex.Message ?? "Gemini error";
-            Console.WriteLine($"❌ LinkerAI Gemini error: {msg}");
-            var isQuota =
-                msg.Contains("quota", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("429", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("RESOURCE_EXHAUSTED", StringComparison.OrdinalIgnoreCase);
-            return new AIResult(false, "", "gemini", isQuota, msg);
-        }
+        return await TryGroqAsync(conversationContext);
     }
 
     private async Task<AIResult> TryGroqAsync(string conversationContext)
@@ -166,7 +65,7 @@ public class LinkerAIService : ILinkerAIService
         {
             if (string.IsNullOrWhiteSpace(_groqApiKey))
             {
-                return new AIResult(false, "", "groq", false, "Groq API key not configured");
+                return new AIResult(false, "", "Groq API key not configured. Please configure Groq:ApiKey in appsettings.json");
             }
 
             Console.WriteLine($"🤖 LinkerAI: Calling Groq API ({GROQ_MODEL_NAME})...");
@@ -191,8 +90,7 @@ public class LinkerAIService : ILinkerAIService
 
             if (!resp.IsSuccessStatusCode)
             {
-                var isRate = (int)resp.StatusCode == 429 || body.Contains("rate", StringComparison.OrdinalIgnoreCase) || body.Contains("quota", StringComparison.OrdinalIgnoreCase);
-                return new AIResult(false, "", "groq", isRate, $"Groq HTTP {(int)resp.StatusCode}: {body}");
+                return new AIResult(false, "", $"Groq API error (HTTP {(int)resp.StatusCode}): {body}");
             }
 
             using var doc = JsonDocument.Parse(body);
@@ -204,21 +102,17 @@ public class LinkerAIService : ILinkerAIService
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                return new AIResult(false, "", "groq", false, "Empty Groq response");
+                return new AIResult(false, "", "Empty response from Groq API");
             }
 
             Console.WriteLine("✅ LinkerAI: Got response from Groq");
-            return new AIResult(true, content, "groq", false, null);
+            return new AIResult(true, content, null);
         }
         catch (Exception ex)
         {
-            var msg = ex.Message ?? "Groq error";
+            var msg = ex.Message ?? "Groq API error";
             Console.WriteLine($"❌ LinkerAI Groq error: {msg}");
-            var isRate =
-                msg.Contains("rate", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("quota", StringComparison.OrdinalIgnoreCase) ||
-                msg.Contains("429", StringComparison.OrdinalIgnoreCase);
-            return new AIResult(false, "", "groq", isRate, msg);
+            return new AIResult(false, "", $"Groq API error: {msg}");
         }
     }
 
@@ -339,9 +233,19 @@ public class LinkerAIService : ILinkerAIService
         }
 
         var aiResult = await TryGetAiResponseAsync(conversationContext.ToString());
+        
+        if (!aiResult.Success)
+        {
+            return new LinkerAIChatResponse
+            {
+                Success = false,
+                SessionId = request.SessionId,
+                Message = $"Groq API error: {aiResult.ErrorMessage}",
+                IsComplete = false
+            };
+        }
+
         var aiResponse = aiResult.Text;
-        var aiHadError = !aiResult.Success;
-        var aiErrorMessage = aiResult.ErrorMessage ?? string.Empty;
 
         // Add AI response to history
         chatHistory.Messages.Add(new ChatMessage
@@ -362,49 +266,20 @@ public class LinkerAIService : ILinkerAIService
             InMemorySessions[chatHistory.SessionId] = chatHistory;
         }
 
-        // If Gemini is down/quota-limited, fall back to deterministic requirement extraction + marketplace matching.
-        // This makes LinkerAI usable on free tiers.
-        var isQuotaOrRateLimit = aiHadError && aiResult.IsRateLimitedOrQuota;
-
         var requirements = ExtractRequirements(chatHistory.Messages);
         var missingInfo = new List<string>();
         if (string.IsNullOrWhiteSpace(requirements.ProjectType)) missingInfo.Add("project type");
         if (!requirements.Budget.HasValue) missingInfo.Add("budget");
         if (!requirements.DeadlineDays.HasValue) missingInfo.Add("deadline");
 
-        var hasMinimumInfo = missingInfo.Count == 0;
-
-        // Check if AI indicates it has enough information (normal path)
-        var isComplete = !aiHadError && CheckIfComplete(aiResponse, chatHistory.Messages);
+        // Check if AI indicates it has enough information
+        var isComplete = CheckIfComplete(aiResponse, chatHistory.Messages);
 
         LinkerAIRecommendations? recommendations = null;
-        if (isComplete || (isQuotaOrRateLimit && hasMinimumInfo))
+        if (isComplete)
         {
             recommendations = await GenerateRecommendationsAsync(chatHistory);
             isComplete = true;
-        }
-
-        if (aiHadError)
-        {
-            if (isQuotaOrRateLimit)
-            {
-                // Friendly response when quota is hit; keep the conversation moving.
-                aiResponse = hasMinimumInfo
-                    ? $"AI provider ({aiResult.Provider}) is currently rate-limited/quota-exceeded. I can still recommend services using marketplace matching. Here are results based on your budget/deadline."
-                    : $"AI provider ({aiResult.Provider}) is currently rate-limited/quota-exceeded. No problem — I can still help without it. Please tell me your {string.Join(" and ", missingInfo)}.";
-            }
-            else
-            {
-                // Non-quota errors: still return a clear failure so frontend can show it properly.
-                return new LinkerAIChatResponse
-                {
-                    Success = false,
-                    SessionId = request.SessionId,
-                    Message = $"LinkerAI backend error ({aiResult.Provider}): {aiErrorMessage}",
-                    IsComplete = false,
-                    MissingInfo = missingInfo
-                };
-            }
         }
 
         return new LinkerAIChatResponse
@@ -441,6 +316,84 @@ public class LinkerAIService : ILinkerAIService
         return await GenerateRecommendationsAsync(chatHistory);
     }
 
+    public async Task<LinkerAIChatResponse?> GetActiveSessionAsync(string userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return null;
+
+        // Find the most recent active session for this user
+        ChatHistory? chatHistory = null;
+        try
+        {
+            chatHistory = await _chatHistories
+                .Find(c => c.UserId == userId && c.IsActive)
+                .SortByDescending(c => c.Metadata.LastActivityAt)
+                .FirstOrDefaultAsync();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed in GetActiveSession, checking in-memory store. Error: {ex.Message}");
+            chatHistory = InMemorySessions.Values
+                .Where(c => c.UserId == userId && c.IsActive)
+                .OrderByDescending(c => c.Metadata.LastActivityAt)
+                .FirstOrDefault();
+        }
+
+        if (chatHistory == null) return null;
+
+        // Check for recommendations
+        LinkerAIRecommendations? recommendations = null;
+        var lastMsg = chatHistory.Messages.LastOrDefault(m => m.Role == "assistant");
+        if (lastMsg != null && CheckIfComplete(lastMsg.Content, chatHistory.Messages))
+        {
+            recommendations = await GenerateRecommendationsAsync(chatHistory);
+        }
+
+        return new LinkerAIChatResponse
+        {
+            Success = true,
+            SessionId = chatHistory.SessionId,
+            Message = chatHistory.Messages.LastOrDefault(m => m.Role == "assistant")?.Content ?? "",
+            IsComplete = recommendations != null,
+            Recommendations = recommendations,
+        };
+    }
+
+    public async Task<List<ChatSessionDto>> GetUserSessionsAsync(string userId)
+    {
+        if (string.IsNullOrEmpty(userId)) return new List<ChatSessionDto>();
+
+        try
+        {
+            var sessions = await _chatHistories
+                .Find(c => c.UserId == userId && c.IsActive)
+                .SortByDescending(c => c.Metadata.LastActivityAt)
+                .Limit(20) // Limit to last 20 sessions
+                .ToListAsync();
+
+            return sessions.Select(s => new ChatSessionDto
+            {
+                SessionId = s.SessionId,
+                LastMessage = s.Messages.LastOrDefault()?.Content?.Take(50).ToString() ?? "New Conversation",
+                LastActivityAt = s.Metadata.LastActivityAt
+            }).ToList();
+        }
+        catch
+        {
+            // Fallback to memory
+            return InMemorySessions.Values
+                .Where(c => c.UserId == userId && c.IsActive)
+                .OrderByDescending(c => c.Metadata.LastActivityAt)
+                .Take(20)
+                .Select(s => new ChatSessionDto
+                {
+                    SessionId = s.SessionId,
+                    LastMessage = s.Messages.LastOrDefault()?.Content ?? "New Conversation",
+                    LastActivityAt = s.Metadata.LastActivityAt
+                })
+                .ToList();
+        }
+    }
+
     private async Task<LinkerAIRecommendations> GenerateRecommendationsAsync(ChatHistory chatHistory)
     {
         // Extract requirements from conversation
@@ -455,6 +408,25 @@ public class LinkerAIService : ILinkerAIService
 
         // Filter and match gigs based on requirements
         var matchedGigs = MatchGigsToRequirements(allGigs.Data, requirements);
+        
+        // Select services that fit within the total budget
+        var topRecommendations = new List<RecommendedService>();
+        var remainingBudget = requirements.Budget ?? decimal.MaxValue;
+        
+        foreach (var gig in matchedGigs)
+        {
+            if (gig.Price <= remainingBudget)
+            {
+                topRecommendations.Add(gig);
+                remainingBudget -= gig.Price;
+                
+                // Limit to top 10 services or until budget is exhausted
+                if (topRecommendations.Count >= 10 || remainingBudget <= 0)
+                {
+                    break;
+                }
+            }
+        }
 
         // Generate project summary
         var projectSummary = new ProjectSummary
@@ -465,28 +437,28 @@ public class LinkerAIService : ILinkerAIService
             KeyRequirements = ExtractKeyRequirements(chatHistory.Messages)
         };
 
-        // Calculate budget breakdown
-        var totalCost = matchedGigs.Sum(g => g.Price);
+        // Calculate budget breakdown based on top recommendations only
+        var totalCost = topRecommendations.Sum(g => g.Price);
         var budgetBreakdown = new BudgetBreakdown
         {
             TotalBudget = requirements.Budget ?? 0,
             TotalCost = totalCost,
             Remaining = (requirements.Budget ?? 0) - totalCost,
-            ServiceCosts = matchedGigs.Select(g => new ServiceCost
+            ServiceCosts = topRecommendations.Select(g => new ServiceCost
             {
                 ServiceName = g.Title,
                 Cost = g.Price
             }).ToList()
         };
 
-        // Calculate timeline
-        var maxDeliveryDays = matchedGigs.Any() ? matchedGigs.Max(g => g.DeliveryDays) : 0;
+        // Calculate timeline based on top recommendations
+        var maxDeliveryDays = topRecommendations.Any() ? topRecommendations.Max(g => g.DeliveryDays) : 0;
         var timeline = new Timeline
         {
             TotalDays = maxDeliveryDays,
             DeadlineDays = requirements.DeadlineDays ?? 0,
             IsFeasible = requirements.DeadlineDays == null || maxDeliveryDays <= requirements.DeadlineDays,
-            Items = matchedGigs.Select((g, index) => new TimelineItem
+            Items = topRecommendations.Select((g, index) => new TimelineItem
             {
                 ServiceName = g.Title,
                 Days = g.DeliveryDays,
@@ -498,7 +470,7 @@ public class LinkerAIService : ILinkerAIService
         return new LinkerAIRecommendations
         {
             ProjectSummary = projectSummary,
-            Services = matchedGigs.Take(10).ToList(), // Top 10 matches
+            Services = topRecommendations,
             Budget = budgetBreakdown,
             Timeline = timeline
         };
@@ -510,49 +482,78 @@ public class LinkerAIService : ILinkerAIService
 
         foreach (var gig in gigs)
         {
+            var gigPrice = gig.Packages?.Basic?.Price ?? 0;
+            var gigDeliveryDays = gig.Packages?.Basic?.DeliveryDays ?? 0;
+
+            // Hard filters: Must meet budget and deadline constraints if specified
+            if (requirements.Budget.HasValue && gigPrice > requirements.Budget.Value)
+            {
+                continue; // Skip gigs that exceed budget
+            }
+
+            if (requirements.DeadlineDays.HasValue && gigDeliveryDays > requirements.DeadlineDays.Value)
+            {
+                continue; // Skip gigs that exceed deadline
+            }
+
+            // Calculate relevance score
             var score = 0.0;
             var reasons = new List<string>();
 
-            // Category matching
+            // Category matching (higher priority)
             if (!string.IsNullOrEmpty(requirements.ProjectType))
             {
                 var projectTypeLower = requirements.ProjectType.ToLower();
                 if (gig.Category?.Name?.ToLower().Contains(projectTypeLower) == true ||
                     gig.Title.ToLower().Contains(projectTypeLower))
                 {
-                    score += 10;
+                    score += 20; // Increased weight for category match
                     reasons.Add("Matches project type");
                 }
             }
 
-            // Budget matching
-            if (requirements.Budget.HasValue && gig.Packages?.Basic != null)
+            // Budget matching (within budget is already filtered, so reward efficiency)
+            if (requirements.Budget.HasValue)
             {
-                if (gig.Packages.Basic.Price <= requirements.Budget.Value)
+                var budgetValue = (decimal)requirements.Budget.Value;
+                var budgetEfficiency = (double)(budgetValue - gigPrice) / (double)budgetValue;
+                if (budgetEfficiency > 0.5) // More than 50% of budget remaining
                 {
                     score += 5;
-                    reasons.Add("Within budget");
+                    reasons.Add("Excellent value");
                 }
                 else
                 {
-                    score -= 5; // Penalty for over budget
+                    reasons.Add("Within budget");
                 }
             }
 
-            // Deadline matching
-            if (requirements.DeadlineDays.HasValue && gig.Packages?.Basic != null)
+            // Deadline matching (meets deadline is already filtered, so reward speed)
+            if (requirements.DeadlineDays.HasValue)
             {
-                if (gig.Packages.Basic.DeliveryDays <= requirements.DeadlineDays.Value)
+                var deadlineBuffer = (double)(requirements.DeadlineDays.Value - gigDeliveryDays) / requirements.DeadlineDays.Value;
+                if (deadlineBuffer > 0.3) // More than 30% buffer
                 {
-                    score += 5;
+                    score += 3;
+                    reasons.Add("Fast delivery");
+                }
+                else
+                {
                     reasons.Add("Meets deadline");
                 }
             }
 
-            // Rating boost
+            // Rating boost (normalized to 0-5 range)
             score += (double)gig.Rating;
 
-            if (score > 0)
+            // Review count boost (more reviews = more trusted)
+            if (gig.ReviewCount > 10)
+            {
+                score += 2;
+            }
+
+            // Only add gigs with positive relevance
+            if (score > 0 || reasons.Any())
             {
                 matched.Add(new RecommendedService
                 {
@@ -561,8 +562,8 @@ public class LinkerAIService : ILinkerAIService
                     Slug = gig.Slug,
                     Category = gig.Category?.Name ?? "Uncategorized",
                     SellerName = gig.Seller?.Username ?? "Unknown",
-                    Price = gig.Packages?.Basic?.Price ?? 0,
-                    DeliveryDays = gig.Packages?.Basic?.DeliveryDays ?? 0,
+                    Price = gigPrice,
+                    DeliveryDays = gigDeliveryDays,
                     Rating = gig.Rating,
                     ReviewCount = gig.ReviewCount,
                     ImageUrl = gig.Images?.FirstOrDefault(),
@@ -572,7 +573,20 @@ public class LinkerAIService : ILinkerAIService
             }
         }
 
-        return matched.OrderByDescending(m => m.Rating).ThenBy(m => m.Price).ToList();
+        // Sort by score (highest first), then by rating, then by price (lowest first)
+        return matched
+            .OrderByDescending(m => 
+            {
+                // Calculate score for sorting
+                var s = (double)m.Rating;
+                if (requirements.Budget.HasValue && m.Price <= requirements.Budget.Value * 0.5m) s += 5;
+                if (requirements.DeadlineDays.HasValue && m.DeliveryDays <= requirements.DeadlineDays.Value * 0.5) s += 3;
+                if (m.ReviewCount > 10) s += 2;
+                return s;
+            })
+            .ThenByDescending(m => m.Rating)
+            .ThenBy(m => m.Price)
+            .ToList();
     }
 
     private ExtractedRequirements ExtractRequirements(List<ChatMessage> messages)
@@ -669,9 +683,34 @@ public class LinkerAIService : ILinkerAIService
 
     private bool CheckIfComplete(string aiResponse, List<ChatMessage> messages)
     {
+        // 1. Check strict indicators from AI text
         var lowerResponse = aiResponse.ToLower();
-        var indicators = new[] { "here are", "recommendations", "i recommend", "suggest", "here's what" };
-        return indicators.Any(indicator => lowerResponse.Contains(indicator)) && messages.Count(m => m.Role == "user") >= 3;
+        var indicators = new[] { 
+            "here are", "recommendation", "recommend", "suggest", "here's what", "found these", "options for you", "check out" 
+        };
+        
+        if (indicators.Any(indicator => lowerResponse.Contains(indicator)) && messages.Any(m => m.Role == "user"))
+        {
+            return true;
+        }
+
+        // 2. data-driven trigger: Do we have enough info?
+        var requirements = ExtractRequirements(messages);
+        
+        // Return true if ProjectType IS known, AND (Budget OR Deadline) is known.
+        // This is a heuristic: usually project type + budget is enough to give good suggestions.
+        bool hasProjectType = !string.IsNullOrWhiteSpace(requirements.ProjectType);
+        bool hasBudget = requirements.Budget.HasValue;
+        bool hasDeadline = requirements.DeadlineDays.HasValue;
+
+        if (hasProjectType && (hasBudget || hasDeadline))
+        {
+            // Optional: You might want to check if the last message from user just provided this info,
+            // but simply checking state is robust.
+            return true;
+        }
+
+        return false;
     }
 
     private string GetSystemPrompt()

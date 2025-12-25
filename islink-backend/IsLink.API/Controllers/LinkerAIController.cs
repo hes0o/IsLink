@@ -98,17 +98,65 @@ public class LinkerAIController : ControllerBase
         }
     }
 
+
     /// <summary>
-    /// Debug/status endpoint to verify which AI provider is configured in the current environment.
+    /// Check for an active session
+    /// </summary>
+    [HttpGet("active")]
+    public async Task<ActionResult<LinkerAIChatResponse>> GetActiveSession()
+    {
+        try
+        {
+            var userId = GetCurrentUserId()?.ToString();
+            if (string.IsNullOrEmpty(userId))
+            {
+                // If not logged in or can't identify user, no active session
+                return NoContent();
+            }
+
+            var result = await _linkerAIService.GetActiveSessionAsync(userId);
+            if (result == null)
+            {
+                return NoContent();
+            }
+
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Get list of past sessions for the user
+    /// </summary>
+    [HttpGet("sessions")]
+    public async Task<ActionResult<List<ChatSessionDto>>> GetSessions()
+    {
+        try
+        {
+            var userId = GetCurrentUserId()?.ToString();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var sessions = await _linkerAIService.GetUserSessionsAsync(userId);
+            return Ok(new { Success = true, Data = sessions });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Debug/status endpoint to verify Groq API is configured.
     /// </summary>
     [HttpGet("status")]
     public ActionResult GetStatus()
     {
-        var provider = (Environment.GetEnvironmentVariable("AI_PROVIDER") ?? _configuration["AI_PROVIDER"] ?? "auto").Trim();
-        var geminiKey =
-            _configuration["Gemini:ApiKey"] ??
-            Environment.GetEnvironmentVariable("Gemini__ApiKey") ??
-            Environment.GetEnvironmentVariable("GEMINI_API_KEY");
         var groqKey =
             _configuration["Groq:ApiKey"] ??
             Environment.GetEnvironmentVariable("Groq__ApiKey") ??
@@ -117,8 +165,7 @@ public class LinkerAIController : ControllerBase
         return Ok(new
         {
             Success = true,
-            ProviderMode = provider,
-            GeminiConfigured = !string.IsNullOrWhiteSpace(geminiKey),
+            ProviderMode = "groq",
             GroqConfigured = !string.IsNullOrWhiteSpace(groqKey),
             Timestamp = DateTime.UtcNow
         });

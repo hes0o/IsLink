@@ -12,7 +12,7 @@ function Layout() {
         <Outlet />
       </main>
       <Footer />
-      <ChatBot />
+      <Footer />
     </div>
   );
 }

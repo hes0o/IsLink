@@ -10,7 +10,7 @@ const getToken = () => localStorage.getItem('token');
 // Helper for API requests
 const apiRequest = async (endpoint, options = {}) => {
   const token = getToken();
-  
+
   const config = {
     ...options,
     headers: {
@@ -29,7 +29,7 @@ const apiRequest = async (endpoint, options = {}) => {
     } catch {
       rawText = await response.text().catch(() => '');
     }
-    
+
     if (!response.ok) {
       const message =
         data?.message ||
@@ -40,7 +40,7 @@ const apiRequest = async (endpoint, options = {}) => {
         `Request failed (${response.status})`;
       throw new Error(message);
     }
-    
+
     return data;
   } catch (error) {
     console.error('API Error:', error);
@@ -223,6 +223,10 @@ export const linkerAIAPI = {
   }),
 
   getRecommendations: (sessionId) => apiRequest(`/linkerai/recommendations/${sessionId}`),
+
+  getActiveSession: () => apiRequest('/linkerai/active'),
+
+  getSessions: () => apiRequest('/linkerai/sessions'),
 };
 
 export default {

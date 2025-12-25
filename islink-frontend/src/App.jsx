@@ -43,13 +43,17 @@ function App() {
         <Route path="gigs" element={<Gigs />} />
         <Route path="gig/:slug" element={<GigDetails />} />
         <Route path="profile/:username" element={<Profile />} />
-        <Route path="linkerai" element={<LinkerAI />} />
+        <Route path="linkerai" element={
+          <ProtectedRoute>
+            <LinkerAI />
+          </ProtectedRoute>
+        } />
         <Route path="gigs/create" element={
           <ProtectedRoute>
             <CreateGig />
           </ProtectedRoute>
         } />
-        
+
         {/* Protected Routes */}
         <Route path="dashboard" element={
           <ProtectedRoute>

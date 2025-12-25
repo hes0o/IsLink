@@ -93,3 +93,10 @@ public class TimelineItem
     public int EndDay { get; set; }
 }
 
+public class ChatSessionDto
+{
+    public string SessionId { get; set; } = string.Empty;
+    public string LastMessage { get; set; } = string.Empty;
+    public DateTime LastActivityAt { get; set; }
+}
+
