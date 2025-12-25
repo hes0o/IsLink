@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { linkerAIAPI } from '../../services/api';
+import ErrorBoundary from '../../components/common/ErrorBoundary';
 import './LinkerAI.css';
 
 function LinkerAI() {
@@ -403,4 +404,12 @@ function LinkerAI() {
   );
 }
 
-export default LinkerAI;
+function LinkerAIWrapper() {
+  return (
+    <ErrorBoundary>
+      <LinkerAI />
+    </ErrorBoundary>
+  );
+}
+
+export default LinkerAIWrapper;
