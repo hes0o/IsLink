@@ -25,6 +25,8 @@ public class ApplicationDbContext : DbContext
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Favorite> Favorites => Set<Favorite>();
     public DbSet<Transaction> Transactions => Set<Transaction>();
+    public DbSet<ChatSession> ChatSessions => Set<ChatSession>();
+    public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -204,6 +206,24 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Transaction>(entity =>
         {
             entity.Property(e => e.Amount).HasPrecision(12, 2);
+        });
+        // ============================================
+        // LinkerAI Chat History Configuration
+        // ============================================
+        modelBuilder.Entity<ChatSession>(entity =>
+        {
+            entity.HasIndex(e => e.SessionId).IsUnique();
+            entity.HasIndex(e => e.UserId);
+
+            entity.HasMany(e => e.Messages)
+                  .WithOne(m => m.ChatSession)
+                  .HasForeignKey(m => m.ChatSessionId)
+                  .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasIndex(e => e.ChatSessionId);
         });
     }
 }

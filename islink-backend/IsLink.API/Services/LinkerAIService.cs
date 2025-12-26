@@ -1,37 +1,28 @@
 using IsLink.API.Data;
 using IsLink.API.Models.DTOs;
 using IsLink.API.Models.Entities;
-using IsLink.API.Models.MongoDB;
 using Microsoft.EntityFrameworkCore;
-using MongoDB.Driver;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Text;
-using System.Collections.Concurrent;
 using System.Net.Http.Headers;
 
 namespace IsLink.API.Services;
 
 public class LinkerAIService : ILinkerAIService
 {
-    private readonly IMongoCollection<ChatHistory> _chatHistories;
     private readonly ApplicationDbContext _context;
     private readonly IGigService _gigService;
     private readonly HttpClient _httpClient;
     private readonly string _groqApiKey;
     private const string GROQ_MODEL_NAME = "llama-3.3-70b-versatile";
 
-    // Fallback store when MongoDB is not reachable (keeps LinkerAI usable on hosted demos)
-    private static readonly ConcurrentDictionary<string, ChatHistory> InMemorySessions = new();
-
     public LinkerAIService(
-        IMongoDatabase database,
         ApplicationDbContext context,
         IGigService gigService,
         IHttpClientFactory httpClientFactory,
         IConfiguration configuration)
     {
-        _chatHistories = database.GetCollection<ChatHistory>("linkerai_conversations");
         _context = context;
         _gigService = gigService;
         _httpClient = httpClientFactory.CreateClient();
@@ -122,29 +113,26 @@ public class LinkerAIService : ILinkerAIService
 
         var systemPrompt = GetSystemPrompt();
 
-        var chatHistory = new ChatHistory
+        var chatSession = new ChatSession
         {
             SessionId = sessionId,
-            UserId = request.UserId,
-            Messages = new List<ChatMessage>
-            {
-                new ChatMessage
-                {
-                    Role = "system",
-                    Content = systemPrompt,
-                    Timestamp = DateTime.UtcNow
-                }
-            },
-            Metadata = new ChatMetadata
-            {
-                StartedAt = DateTime.UtcNow,
-                LastActivityAt = DateTime.UtcNow
-            }
+            UserId = request.UserId ?? "guest", // Default to guest if null
+            StartedAt = DateTime.UtcNow,
+            LastActivityAt = DateTime.UtcNow,
+            IsActive = true
         };
+
+        // Add System Message
+        chatSession.Messages.Add(new ChatMessage
+        {
+            Role = "system",
+            Content = systemPrompt,
+            Timestamp = DateTime.UtcNow
+        });
 
         if (!string.IsNullOrEmpty(request.InitialMessage))
         {
-            chatHistory.Messages.Add(new ChatMessage
+            chatSession.Messages.Add(new ChatMessage
             {
                 Role = "user",
                 Content = request.InitialMessage,
@@ -154,13 +142,13 @@ public class LinkerAIService : ILinkerAIService
 
         try
         {
-            await _chatHistories.InsertOneAsync(chatHistory);
+            _context.ChatSessions.Add(chatSession);
+            await _context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
-            // MongoDB might be blocked/whitelisted on Atlas; don't break LinkerAI
-            Console.WriteLine($"⚠️ LinkerAI MongoDB insert failed, using in-memory session store. Error: {ex.Message}");
-            InMemorySessions[sessionId] = chatHistory;
+            Console.WriteLine($"⚠️ LinkerAI Database insert failed: {ex.Message}");
+            throw; // Fail if DB fails, as we rely on persistence now
         }
 
         if (string.IsNullOrEmpty(request.InitialMessage))
@@ -190,39 +178,29 @@ public class LinkerAIService : ILinkerAIService
             throw new ArgumentException("SessionId is required");
         }
 
-        ChatHistory? chatHistory = null;
-        try
-        {
-            chatHistory = await _chatHistories
-                .Find(c => c.SessionId == request.SessionId && c.IsActive)
-                .FirstOrDefaultAsync();
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed, trying in-memory store. Error: {ex.Message}");
-        }
+        // Retrieve session with messages
+        var chatSession = await _context.ChatSessions
+            .Include(c => c.Messages)
+            .FirstOrDefaultAsync(c => c.SessionId == request.SessionId && c.IsActive);
 
-        // Check memory if not found in Mongo (or if Mongo failed)
-        if (chatHistory == null)
-        {
-             InMemorySessions.TryGetValue(request.SessionId, out chatHistory);
-        }
-
-        if (chatHistory == null)
+        if (chatSession == null)
         {
             throw new KeyNotFoundException("Chat session not found");
         }
 
         // Add user message
-        chatHistory.Messages.Add(new ChatMessage
+        var userMsg = new ChatMessage
         {
             Role = "user",
             Content = request.Message,
-            Timestamp = DateTime.UtcNow
-        });
+            Timestamp = DateTime.UtcNow,
+            ChatSessionId = chatSession.Id
+        };
+        chatSession.Messages.Add(userMsg);
+        _context.ChatMessages.Add(userMsg); // Explicit add to ensure tracking
 
         // Build conversation context for Gemini
-        var systemMessage = chatHistory.Messages.FirstOrDefault(m => m.Role == "system");
+        var systemMessage = chatSession.Messages.FirstOrDefault(m => m.Role == "system");
         var systemPrompt = systemMessage?.Content ?? GetSystemPrompt();
         
         // Build the full prompt with context
@@ -231,7 +209,7 @@ public class LinkerAIService : ILinkerAIService
         conversationContext.AppendLine();
         
         // Add conversation history
-        foreach (var msg in chatHistory.Messages.Where(m => m.Role != "system"))
+        foreach (var msg in chatSession.Messages.Where(m => m.Role != "system"))
         {
             var role = msg.Role == "user" ? "User" : "Assistant";
             conversationContext.AppendLine($"{role}: {msg.Content}");
@@ -253,37 +231,41 @@ public class LinkerAIService : ILinkerAIService
         var aiResponse = aiResult.Text;
 
         // Add AI response to history
-        chatHistory.Messages.Add(new ChatMessage
+        var aiMsg = new ChatMessage
         {
             Role = "assistant",
             Content = aiResponse,
-            Timestamp = DateTime.UtcNow
-        });
+            Timestamp = DateTime.UtcNow,
+            ChatSessionId = chatSession.Id
+        };
+        chatSession.Messages.Add(aiMsg);
+        _context.ChatMessages.Add(aiMsg);
 
-        chatHistory.Metadata.LastActivityAt = DateTime.UtcNow;
+        chatSession.LastActivityAt = DateTime.UtcNow;
+
         try
         {
-            await _chatHistories.ReplaceOneAsync(c => c.Id == chatHistory.Id, chatHistory);
+            await _context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"⚠️ LinkerAI MongoDB update failed, persisting to in-memory store. Error: {ex.Message}");
-            InMemorySessions[chatHistory.SessionId] = chatHistory;
+            Console.WriteLine($"⚠️ LinkerAI Database update failed: {ex.Message}");
+            throw;
         }
 
-        var requirements = ExtractRequirements(chatHistory.Messages);
+        var requirements = ExtractRequirements(chatSession.Messages);
         var missingInfo = new List<string>();
         if (string.IsNullOrWhiteSpace(requirements.ProjectType)) missingInfo.Add("project type");
         if (!requirements.Budget.HasValue) missingInfo.Add("budget");
         if (!requirements.DeadlineDays.HasValue) missingInfo.Add("deadline");
 
         // Check if AI indicates it has enough information
-        var isComplete = CheckIfComplete(aiResponse, chatHistory.Messages);
+        var isComplete = CheckIfComplete(aiResponse, chatSession.Messages);
 
         LinkerAIRecommendations? recommendations = null;
         if (isComplete)
         {
-            recommendations = await GenerateRecommendationsAsync(chatHistory);
+            recommendations = await GenerateRecommendationsAsync(chatSession);
             isComplete = true;
         }
 
@@ -300,25 +282,24 @@ public class LinkerAIService : ILinkerAIService
 
     public async Task<LinkerAIRecommendations?> GetRecommendationsAsync(string sessionId)
     {
-        ChatHistory? chatHistory = null;
+        ChatSession? chatSession = null;
         try
         {
-            chatHistory = await _chatHistories
-                .Find(c => c.SessionId == sessionId && c.IsActive)
-                .FirstOrDefaultAsync();
+            chatSession = await _context.ChatSessions
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.IsActive);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed in GetRecommendations, trying in-memory store. Error: {ex.Message}");
-            InMemorySessions.TryGetValue(sessionId, out chatHistory);
+            Console.WriteLine($"⚠️ LinkerAI Database find failed in GetRecommendations: {ex.Message}");
         }
 
-        if (chatHistory == null)
+        if (chatSession == null)
         {
             return null;
         }
 
-        return await GenerateRecommendationsAsync(chatHistory);
+        return await GenerateRecommendationsAsync(chatSession);
     }
 
     public async Task<LinkerAIChatResponse?> GetActiveSessionAsync(string userId)
@@ -326,38 +307,38 @@ public class LinkerAIService : ILinkerAIService
         if (string.IsNullOrEmpty(userId)) return null;
 
         // Find the most recent active session for this user
-        ChatHistory? chatHistory = null;
+        ChatSession? chatSession = null;
         try
         {
-            chatHistory = await _chatHistories
-                .Find(c => c.UserId == userId && c.IsActive)
-                .SortByDescending(c => c.Metadata.LastActivityAt)
+            chatSession = await _context.ChatSessions
+                .Include(c => c.Messages)
+                .Where(c => c.UserId == userId && c.IsActive)
+                .OrderByDescending(c => c.LastActivityAt)
                 .FirstOrDefaultAsync();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"⚠️ LinkerAI MongoDB find failed in GetActiveSession, checking in-memory store. Error: {ex.Message}");
-            chatHistory = InMemorySessions.Values
-                .Where(c => c.UserId == userId && c.IsActive)
-                .OrderByDescending(c => c.Metadata.LastActivityAt)
-                .FirstOrDefault();
+            Console.WriteLine($"⚠️ LinkerAI Database find failed in GetActiveSession: {ex.Message}");
+            return null;
         }
 
-        if (chatHistory == null) return null;
+        if (chatSession == null) return null;
 
         // Check for recommendations
         LinkerAIRecommendations? recommendations = null;
-        var lastMsg = chatHistory.Messages.LastOrDefault(m => m.Role == "assistant");
-        if (lastMsg != null && CheckIfComplete(lastMsg.Content, chatHistory.Messages))
+        var lastMsg = chatSession.Messages.LastOrDefault(m => m.Role == "assistant");
+        
+        // Safety check if last message exists
+        if (lastMsg != null && CheckIfComplete(lastMsg.Content, chatSession.Messages))
         {
-            recommendations = await GenerateRecommendationsAsync(chatHistory);
+            recommendations = await GenerateRecommendationsAsync(chatSession);
         }
 
         return new LinkerAIChatResponse
         {
             Success = true,
-            SessionId = chatHistory.SessionId,
-            Message = chatHistory.Messages.LastOrDefault(m => m.Role == "assistant")?.Content ?? "",
+            SessionId = chatSession.SessionId,
+            Message = chatSession.Messages.LastOrDefault(m => m.Role == "assistant")?.Content ?? "",
             IsComplete = recommendations != null,
             Recommendations = recommendations,
         };
@@ -367,55 +348,33 @@ public class LinkerAIService : ILinkerAIService
     {
         if (string.IsNullOrEmpty(userId)) return new List<ChatSessionDto>();
 
-        var sessions = new List<ChatHistory>();
-
-        // 1. Try Mongo
         try
         {
-            var mongoSessions = await _chatHistories
-                .Find(c => c.UserId == userId && c.IsActive)
-                .SortByDescending(c => c.Metadata.LastActivityAt)
-                .Limit(20)
+            var sessions = await _context.ChatSessions
+                .Include(c => c.Messages)
+                .Where(c => c.UserId == userId && c.IsActive)
+                .OrderByDescending(c => c.LastActivityAt)
+                .Take(20)
                 .ToListAsync();
-            sessions.AddRange(mongoSessions);
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠️ Mongo fetch failed in GetUserSessions: {ex.Message}");
-        }
 
-        // 2. Merge Memory (avoiding duplicates)
-        var memorySessions = InMemorySessions.Values
-            .Where(c => c.UserId == userId && c.IsActive)
-            .OrderByDescending(c => c.Metadata.LastActivityAt)
-            .Take(20)
-            .ToList();
-
-        foreach (var memSession in memorySessions)
-        {
-            if (!sessions.Any(s => s.SessionId == memSession.SessionId))
-            {
-                sessions.Add(memSession);
-            }
-        }
-
-        // 3. Sort final combined list
-        return sessions
-            .OrderByDescending(s => s.Metadata.LastActivityAt)
-            .Take(20)
-            .Select(s => new ChatSessionDto
+            return sessions.Select(s => new ChatSessionDto
             {
                 SessionId = s.SessionId,
                 LastMessage = s.Messages.LastOrDefault()?.Content?.Take(50).ToString() ?? "New Conversation",
-                LastActivityAt = s.Metadata.LastActivityAt
-            })
-            .ToList();
+                LastActivityAt = s.LastActivityAt
+            }).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Database fetch failed in GetUserSessions: {ex.Message}");
+            return new List<ChatSessionDto>();
+        }
     }
 
-    private async Task<LinkerAIRecommendations> GenerateRecommendationsAsync(ChatHistory chatHistory)
+    private async Task<LinkerAIRecommendations> GenerateRecommendationsAsync(ChatSession chatSession)
     {
         // Extract requirements from conversation
-        var requirements = ExtractRequirements(chatHistory.Messages);
+        var requirements = ExtractRequirements(chatSession.Messages);
 
         // Get all available gigs
         var allGigs = await _gigService.GetGigsAsync(new GigFilterRequest
@@ -450,9 +409,9 @@ public class LinkerAIService : ILinkerAIService
         var projectSummary = new ProjectSummary
         {
             ProjectType = requirements.ProjectType ?? "General Project",
-            Description = requirements.Description ?? string.Join(" ", chatHistory.Messages.Where(m => m.Role == "user").Select(m => m.Content)),
+            Description = requirements.Description ?? string.Join(" ", chatSession.Messages.Where(m => m.Role == "user").Select(m => m.Content)),
             BrandName = requirements.BrandName,
-            KeyRequirements = ExtractKeyRequirements(chatHistory.Messages)
+            KeyRequirements = ExtractKeyRequirements(chatSession.Messages)
         };
 
         // Calculate budget breakdown based on top recommendations only
