@@ -17,9 +17,8 @@ function LinkerAI() {
   const chatContainerRef = useRef(null);
 
   useEffect(() => {
-    // Check for active session on mount
-    checkActiveSession();
-    // Load history
+    // Only load history on mount. 
+    // We DO NOT auto-load the active session anymore to give user control.
     loadHistory();
   }, []);
 
@@ -29,7 +28,11 @@ function LinkerAI() {
     }
   }, [messages, loading]);
 
+  // Removed checkActiveSession from auto-startup
+  // It is now only internal or triggered by explicit action if needed.
   const checkActiveSession = async () => {
+    // Kept for reference or explicit "Resume" button if we add one later
+    // For now, we rely on loadSession(id) from the sidebar.
     try {
       setLoading(true);
       const session = await linkerAIAPI.getActiveSession();

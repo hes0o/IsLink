@@ -703,7 +703,7 @@ public static class DbSeeder
                 "modern-minimalist-logo-design",
                 "Looking for a professional logo that represents your brand? I create modern, minimalist logos that are memorable and versatile. Each logo is crafted with attention to detail and designed to work across all platforms - from business cards to billboards. With over 500 logos delivered, I know how to capture your brand's essence.",
                 4.9m, 127, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/115528926/original/77cc7c95f5ebe4e46e84a5a59ac5d8e881f99b70/design-3-modern-minimalist-logo-design.png" },
+                new[] { "https://images.unsplash.com/photo-1626785774573-4b799314346d?w=800&h=600&fit=crop" },
                 new[] { "logo design", "minimalist", "branding", "modern" },
                 25, 50, 100, 3, 5, 7
             ),
@@ -713,7 +713,7 @@ public static class DbSeeder
                 "complete-brand-identity-package",
                 "Get everything your brand needs to stand out! This package includes logo, business cards, letterhead, social media kit, and brand guidelines. Perfect for new businesses or rebrands looking for a cohesive visual identity.",
                 4.9m, 45, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/197515431/original/8f4e25c4cd0e1f4e9d8a5f6a7b8c9d0e1f2a3b4c/create-brand-identity-design.jpg" },
+                new[] { "https://images.unsplash.com/photo-1634942537034-2531766767d1?w=800&h=600&fit=crop" },
                 new[] { "brand identity", "branding", "business cards", "logo" },
                 150, 300, 500, 7, 10, 14
             ),
@@ -723,7 +723,7 @@ public static class DbSeeder
                 "stunning-social-media-graphics",
                 "Boost your social media presence with eye-catching graphics! I create posts, stories, covers, and ads for Instagram, Facebook, LinkedIn, and more. Consistent branding that gets engagement.",
                 4.8m, 38, 8,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/156789123/original/social-media-graphics.jpg" },
+                new[] { "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop" },
                 new[] { "social media", "instagram", "facebook", "graphics" },
                 20, 45, 80, 2, 3, 5
             ),
@@ -735,7 +735,7 @@ public static class DbSeeder
                 "responsive-react-nodejs-website",
                 "Need a modern, fast, and responsive website? I specialize in building full-stack web applications using React for the frontend and Node.js for the backend. Clean code, best practices, and SEO-friendly structure included. Deployed on your preferred hosting.",
                 5.0m, 89, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/197495498/original/43c71bce96e57eeb9efaa5c3e433c3a309b0a59a/develop-modern-responsive-website-in-react-js.jpg" },
+                new[] { "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&h=600&fit=crop" },
                 new[] { "react", "nodejs", "web development", "responsive" },
                 100, 250, 500, 7, 14, 21
             ),
