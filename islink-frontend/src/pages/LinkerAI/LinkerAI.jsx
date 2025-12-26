@@ -191,6 +191,9 @@ function LinkerAI() {
       if (isComplete && recs) {
         setRecommendations(recs);
       }
+
+      // Refresh history sidebar to show new message/session
+      await loadHistory();
     } catch (error) {
       console.error('Error sending message:', error);
       const msg = error?.message || 'Unknown error';
