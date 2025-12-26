@@ -88,14 +88,21 @@ function LinkerAI() {
 
   // FIX: Improved Image URL handling
   const getImageUrl = (url) => {
-    if (!url) return 'https://placehold.co/600x400?text=No+Image';
+    if (!url) return 'https://placehold.co/600x400?text=Service+Image';
+
+    // If it's already a full URL (http/https), use it
     if (url.startsWith('http')) return url;
 
+    // Handle relative paths
     // Replace backslashes with forward slashes for web compatibility
-    const webUrl = url.replace(/\\/g, '/');
+    let cleanUrl = url.replace(/\\/g, '/');
 
     // Remove leading slash if present to avoid double slashes with base URL
-    const cleanUrl = webUrl.startsWith('/') ? webUrl.slice(1) : webUrl;
+    if (cleanUrl.startsWith('/')) {
+      cleanUrl = cleanUrl.slice(1);
+    }
+
+    // Construct full URL pointing to the API public folder (or wherever images are served)
     const cleanBase = (import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001').replace(/\/$/, '');
 
     return `${cleanBase}/${cleanUrl}`;
@@ -363,7 +370,7 @@ function LinkerAI() {
                       className="service-image"
                       onError={(e) => {
                         e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=300&fit=crop'; // Generic professional gradient/abstract
+                        e.target.src = 'https://placehold.co/600x400?text=Service'; // Reliable fallback
                       }}
                     />
                   )}
