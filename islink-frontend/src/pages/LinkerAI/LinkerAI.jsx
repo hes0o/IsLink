@@ -206,7 +206,7 @@ function LinkerAI() {
       }
 
       // Refresh history sidebar to show new message/session
-      await loadHistory();
+      loadHistory();
     } catch (error) {
       console.error('Error sending message:', error);
       const msg = error?.message || 'Unknown error';
