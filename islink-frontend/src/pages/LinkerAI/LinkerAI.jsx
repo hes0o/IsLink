@@ -12,7 +12,7 @@ function LinkerAI() {
   const [recommendations, setRecommendations] = useState(null);
   const [errorBanner, setErrorBanner] = useState('');
   const [history, setHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
+  const [showHistory, setShowHistory] = useState(true); // Default open on desktop
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
@@ -38,9 +38,6 @@ function LinkerAI() {
         setSessionId(session.SessionId || session.sessionId);
         const lastMsg = session.Message || session.message;
 
-        // In a real app we would load full history, here we just show the last state
-        // or a "Welcome back" to indicate continuity if history is partial.
-        // For now, let's just set the session and if there was a last message, show it.
         if (lastMsg) {
           setMessages([{
             role: 'assistant',
@@ -83,12 +80,19 @@ function LinkerAI() {
     // For MVP, just switching the active highlight visually
     // In full implementation, we'd fetch the specific session details
     console.log("Switching to session", sessId);
+    // TODO: Implement actual session fetch
   };
 
+  // FIX: Improved Image URL handling
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/600x400?text=No+Image';
     if (url.startsWith('http')) return url;
-    return `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}/${url}`;
+
+    // Remove leading slash if present to avoid double slashes with base URL
+    const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+    const cleanBase = (import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001').replace(/\/$/, '');
+
+    return `${cleanBase}/${cleanUrl}`;
   };
 
   // Helper to safely access properties regardless of case
@@ -112,6 +116,14 @@ function LinkerAI() {
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  };
+
+  // New Chat Functionality
+  const handleNewChat = () => {
+    setSessionId(null);
+    setMessages([]);
+    setRecommendations(null);
+    startConversation();
   };
 
   const startConversation = async () => {
@@ -198,83 +210,88 @@ function LinkerAI() {
 
   return (
     <div className="linkerai-page">
-      {/* Header */}
-      <div className="linkerai-header">
-        <div className="linkerai-header-content">
-          <div className="linkerai-logo">
-            <span className="ai-icon">🤖</span>
-            <h1>LinkerAI</h1>
-          </div>
-          <p>Your intelligent project assistant</p>
+      {/* 1. Left Sidebar: History */}
+      <div className={`linkerai-sidebar ${!showHistory ? 'closed' : ''}`}>
+        <div className="sidebar-header">
+          <button className="new-chat-btn" onClick={handleNewChat}>
+            <span>+</span> New Chat
+          </button>
         </div>
-      </div>
 
-      <div className="linkerai-main">
-        {/* History Sidebar */}
-        <div className={`linkerai-sidebar ${showHistory ? 'open' : ''}`}>
-          <div className="sidebar-header">
-            <h3>History</h3>
-            <button onClick={() => setShowHistory(false)} className="close-sidebar">×</button>
-          </div>
+        <div className="sidebar-content">
+          <div className="history-group-title">Recent</div>
           <div className="history-list">
-            {history.length === 0 && <p className="no-history">No past conversations</p>}
+            {history.length === 0 && <p style={{ padding: '0.5rem', color: '#9ca3af', fontSize: '0.9rem' }}>No history</p>}
             {history.map(sess => (
-              <div key={safeGet(sess, 'sessionId')} className={`history-item ${safeGet(sess, 'sessionId') === sessionId ? 'active' : ''}`} onClick={() => loadSession(safeGet(sess, 'sessionId'))}>
-                <div className="history-date">{new Date(safeGet(sess, 'lastActivityAt')).toLocaleDateString()}</div>
-                <div className="history-preview">{safeGet(sess, 'lastMessage')}</div>
+              <div
+                key={safeGet(sess, 'sessionId')}
+                className={`history-item ${safeGet(sess, 'sessionId') === sessionId ? 'active' : ''}`}
+                onClick={() => loadSession(safeGet(sess, 'sessionId'))}
+              >
+                <span>💬</span>
+                <span>{safeGet(sess, 'lastMessage') || 'New Conversation'}</span>
               </div>
             ))}
           </div>
         </div>
+      </div>
 
-        {/* Chat Section - Centered */}
-        <div className="linkerai-chat-wrapper">
-          <button className="toggle-history-btn" onClick={() => setShowHistory(!showHistory)}>
-            📜 History
-          </button>
-          <div className="linkerai-chat" ref={chatContainerRef}>
-            {errorBanner && (
-              <div className="linkerai-error-banner">
-                <strong>LinkerAI error:</strong> {errorBanner}
-              </div>
-            )}
-            <div className="chat-messages">
-              {messages.map((msg, index) => (
-                <div key={index} className={`message ${msg.role}`}>
-                  <div className="message-content">
-                    {msg.role === 'assistant' && (
-                      <div className="message-avatar">🤖</div>
-                    )}
-                    <div className="message-text">{msg.content}</div>
-                    {msg.role === 'user' && (
-                      <div className="message-avatar">👤</div>
-                    )}
-                  </div>
+      {/* 2. Main Chat Area */}
+      <div className="linkerai-main">
+        <header className="linkerai-header">
+          <div className="header-left">
+            <button className="toggle-sidebar-btn" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? '◀' : '▶'}
+            </button>
+            <div className="model-selector">
+              LinkerAI <span style={{ fontSize: '0.8rem', color: '#6b7280', fontWeight: 'normal' }}>Pro</span>
+            </div>
+          </div>
+        </header>
+
+        <div className="linkerai-chat-wrapper" ref={chatContainerRef}>
+          {errorBanner && (
+            <div className="linkerai-error-banner">
+              <strong>Error:</strong> {errorBanner}
+            </div>
+          )}
+
+          <div className="chat-messages">
+            {messages.map((msg, index) => (
+              <div key={index} className={`message ${msg.role}`}>
+                <div className="message-avatar">
+                  {msg.role === 'assistant' ? '🤖' : '👤'}
                 </div>
-              ))}
-              {loading && (
-                <div className="message assistant">
-                  <div className="message-content">
-                    <div className="message-avatar">🤖</div>
-                    <div className="message-text">
-                      <div className="typing-indicator">
-                        <span></span>
-                        <span></span>
-                        <span></span>
-                      </div>
+                <div className="message-content">
+                  <div className="message-name">{msg.role === 'assistant' ? 'LinkerAI' : 'You'}</div>
+                  <div className="message-text">{msg.content}</div>
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div className="message assistant">
+                <div className="message-avatar">🤖</div>
+                <div className="message-content">
+                  <div className="message-name">LinkerAI</div>
+                  <div className="message-text">
+                    <div className="typing-indicator">
+                      <span></span><span></span><span></span>
                     </div>
                   </div>
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
+          </div>
 
+          <div className="chat-input-container">
             <form className="chat-input-form" onSubmit={sendMessage}>
               <input
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Tell me about your project..."
+                placeholder="Message LinkerAI..."
                 disabled={loading || !sessionId}
                 className="chat-input"
               />
@@ -283,123 +300,72 @@ function LinkerAI() {
                 disabled={loading || !sessionId || !inputMessage.trim()}
                 className="chat-send-button"
               >
-                Send
+                ➤
               </button>
             </form>
           </div>
         </div>
+      </div>
 
-        {/* Recommendations Section - Sidebar */}
-        {recommendations && (
-          <div className="linkerai-recommendations">
-            <h2>📋 Your Personalized Recommendations</h2>
+      {/* 3. Right Panel: Recommendations (Conditional) */}
+      {recommendations && (
+        <div className="linkerai-recommendations">
+          <h2>Recommendations</h2>
 
-            {/* Project Summary */}
-            <div className="recommendation-section">
-              <h3>Project Summary</h3>
-              <div className="project-summary">
-                <p><strong>Type:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'projectType')}</p>
-                {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName') && (
-                  <p><strong>Brand:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName')}</p>
-                )}
-                <p><strong>Description:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'description')}</p>
-                {(getRecProp(getRecProp(recommendations, 'projectSummary'), 'keyRequirements') || []).length > 0 && (
-                  <div>
-                    <strong>Key Requirements:</strong>
-                    <ul>
-                      {getRecProp(getRecProp(recommendations, 'projectSummary'), 'keyRequirements').map((req, idx) => (
-                        <li key={idx}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </div>
+          {/* Project Summary */}
+          <div className="rec-card">
+            <h3>Project Summary</h3>
+            <div className="project-summary">
+              <p><strong>Type:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'projectType')}</p>
+              {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName') && (
+                <p><strong>Brand:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName')}</p>
+              )}
+              <p style={{ fontSize: '0.9rem' }}>{getRecProp(getRecProp(recommendations, 'projectSummary'), 'description')}</p>
             </div>
+          </div>
 
-            {/* Budget Breakdown */}
-            <div className="recommendation-section">
-              <h3>💰 Budget Breakdown</h3>
-              <div className="budget-breakdown">
-                <div className="budget-item">
-                  <span>Total Budget:</span>
-                  <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalBudget'))}</strong>
-                </div>
-                <div className="budget-item">
-                  <span>Total Cost:</span>
-                  <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalCost'))}</strong>
-                </div>
-                <div className="budget-item highlight">
-                  <span>Remaining:</span>
-                  <strong className={getRecProp(getRecProp(recommendations, 'budget'), 'remaining') >= 0 ? 'positive' : 'negative'}>
-                    ${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'remaining'))}
-                  </strong>
-                </div>
-                <div className="service-costs">
-                  <strong>Service Costs:</strong>
-                  <ul>
-                    {(getRecProp(getRecProp(recommendations, 'budget'), 'serviceCosts') || []).map((cost, idx) => (
-                      <li key={idx}>
-                        {getRecProp(cost, 'serviceName')}: <strong>${safeFixed(getRecProp(cost, 'cost'))}</strong>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+          {/* Budget */}
+          <div className="rec-card">
+            <h3>Budget Analysis</h3>
+            <div className="budget-breakdown">
+              <div className="budget-item">
+                <span>Total:</span>
+                <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalBudget'))}</strong>
               </div>
-            </div>
-
-            {/* Timeline */}
-            <div className="recommendation-section">
-              <h3>📅 Timeline</h3>
-              <div className="timeline-info">
-                <p><strong>Estimated Delivery:</strong> {getRecProp(getRecProp(recommendations, 'timeline'), 'totalDays')} days</p>
-                <p><strong>Your Deadline:</strong> {getRecProp(getRecProp(recommendations, 'timeline'), 'deadlineDays')} days</p>
-                <p className={getRecProp(getRecProp(recommendations, 'timeline'), 'isFeasible') ? 'feasible' : 'not-feasible'}>
-                  <strong>Status:</strong> {getRecProp(getRecProp(recommendations, 'timeline'), 'isFeasible') ? '✅ Feasible' : '⚠️ Tight Timeline'}
-                </p>
-                {(getRecProp(getRecProp(recommendations, 'timeline'), 'items') || []).length > 0 && (
-                  <div className="timeline-items">
-                    {getRecProp(getRecProp(recommendations, 'timeline'), 'items').map((item, idx) => (
-                      <div key={idx} className="timeline-item">
-                        <strong>{getRecProp(item, 'serviceName')}</strong>
-                        <span>Days {getRecProp(item, 'startDay')}-{getRecProp(item, 'endDay')} ({getRecProp(item, 'days')} days)</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Recommended Services */}
-            <div className="recommendation-section">
-              <h3>🎯 Recommended Services</h3>
-              <div className="recommended-services">
-                {(getRecProp(recommendations, 'services') || []).map((service) => (
-                  <div key={getRecProp(service, 'gigId')} className="recommended-service-card">
-                    <Link to={`/gig/${getRecProp(service, 'slug')}`} className="service-card-link">
-                      {getRecProp(service, 'imageUrl') && (
-                        <img src={getImageUrl(getRecProp(service, 'imageUrl'))} alt={getRecProp(service, 'title')} className="service-image"
-                          onError={(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Error'} />
-                      )}
-                      <div className="service-info">
-                        <h4>{getRecProp(service, 'title')}</h4>
-                        <p className="service-category">{getRecProp(service, 'category')}</p>
-                        <p className="service-seller">by {getRecProp(service, 'sellerName')}</p>
-                        <div className="service-rating">
-                          ⭐ {safeFixed(getRecProp(service, 'rating'), 1)} ({getRecProp(service, 'reviewCount')} reviews)
-                        </div>
-                        <p className="service-price">${safeFixed(getRecProp(service, 'price'))}</p>
-                        <p className="service-delivery">Delivery: {getRecProp(service, 'deliveryDays')} days</p>
-                        <p className="service-reason"><em>Why: {getRecProp(service, 'reason')}</em></p>
-                        <span className="btn-view">View Service</span>
-                      </div>
-                    </Link>
-                  </div>
-                ))}
+              <div className="budget-item highlight">
+                <span>Rem:</span>
+                <strong className={getRecProp(getRecProp(recommendations, 'budget'), 'remaining') >= 0 ? 'positive' : 'negative'}>
+                  ${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'remaining'))}
+                </strong>
               </div>
             </div>
           </div>
-        )}
-      </div>
+
+          {/* Recommended Services */}
+          <div className="rec-card">
+            <h3>Services</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {(getRecProp(recommendations, 'services') || []).map((service) => (
+                <Link key={getRecProp(service, 'gigId')} to={`/gig/${getRecProp(service, 'slug')}`} className="recommended-service-card">
+                  {getRecProp(service, 'imageUrl') && (
+                    <img
+                      src={getImageUrl(getRecProp(service, 'imageUrl'))}
+                      alt={getRecProp(service, 'title')}
+                      className="service-image"
+                      onError={(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Error'}
+                    />
+                  )}
+                  <div className="service-info" style={{ padding: 0 }}>
+                    <h4>{getRecProp(service, 'title')}</h4>
+                    <div className="service-price">${safeFixed(getRecProp(service, 'price'))}</div>
+                    <div className="service-rating">⭐ {safeFixed(getRecProp(service, 'rating'), 1)}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
