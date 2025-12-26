@@ -197,7 +197,6 @@ public class LinkerAIService : ILinkerAIService
                 .Find(c => c.SessionId == request.SessionId && c.IsActive)
                 .FirstOrDefaultAsync();
         }
-        }
         catch (Exception ex)
         {
             Console.WriteLine($"⚠️ LinkerAI MongoDB find failed, trying in-memory store. Error: {ex.Message}");
