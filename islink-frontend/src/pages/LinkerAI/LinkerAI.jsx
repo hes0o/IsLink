@@ -88,8 +88,11 @@ function LinkerAI() {
     if (!url) return 'https://placehold.co/600x400?text=No+Image';
     if (url.startsWith('http')) return url;
 
+    // Replace backslashes with forward slashes for web compatibility
+    const webUrl = url.replace(/\\/g, '/');
+
     // Remove leading slash if present to avoid double slashes with base URL
-    const cleanUrl = url.startsWith('/') ? url.slice(1) : url;
+    const cleanUrl = webUrl.startsWith('/') ? webUrl.slice(1) : webUrl;
     const cleanBase = (import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001').replace(/\/$/, '');
 
     return `${cleanBase}/${cleanUrl}`;
@@ -355,10 +358,13 @@ function LinkerAI() {
                       src={getImageUrl(getRecProp(service, 'imageUrl'))}
                       alt={getRecProp(service, 'title')}
                       className="service-image"
-                      onError={(e) => e.target.src = 'https://placehold.co/600x400?text=Image+Error'}
+                      onError={(e) => {
+                        e.target.onerror = null; // Prevent infinite loop
+                        e.target.src = 'https://images.unsplash.com/photo-1557683316-973673baf926?w=400&h=300&fit=crop'; // Generic professional gradient/abstract
+                      }}
                     />
                   )}
-                  <div className="service-info" style={{ padding: 0 }}>
+                  <div className="service-info">
                     <h4>{getRecProp(service, 'title')}</h4>
                     <div className="service-price">${safeFixed(getRecProp(service, 'price'))}</div>
                     <div className="service-rating">⭐ {safeFixed(getRecProp(service, 'rating'), 1)}</div>

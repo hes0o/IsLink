@@ -171,6 +171,9 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+// Enable static file serving
+app.UseStaticFiles();
+
 // CORS
 app.UseCors("AllowFrontend");
 
