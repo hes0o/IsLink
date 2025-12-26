@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { linkerAIAPI } from '../../services/api';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
-import './LinkerAI.css';
+import './LinkerAI.v2.css';
 
 function LinkerAI() {
   const [sessionId, setSessionId] = useState(null);

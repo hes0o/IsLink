@@ -197,10 +197,16 @@ public class LinkerAIService : ILinkerAIService
                 .Find(c => c.SessionId == request.SessionId && c.IsActive)
                 .FirstOrDefaultAsync();
         }
+        }
         catch (Exception ex)
         {
             Console.WriteLine($"⚠️ LinkerAI MongoDB find failed, trying in-memory store. Error: {ex.Message}");
-            InMemorySessions.TryGetValue(request.SessionId, out chatHistory);
+        }
+
+        // Check memory if not found in Mongo (or if Mongo failed)
+        if (chatHistory == null)
+        {
+             InMemorySessions.TryGetValue(request.SessionId, out chatHistory);
         }
 
         if (chatHistory == null)
@@ -362,36 +368,49 @@ public class LinkerAIService : ILinkerAIService
     {
         if (string.IsNullOrEmpty(userId)) return new List<ChatSessionDto>();
 
+        var sessions = new List<ChatHistory>();
+
+        // 1. Try Mongo
         try
         {
-            var sessions = await _chatHistories
+            var mongoSessions = await _chatHistories
                 .Find(c => c.UserId == userId && c.IsActive)
                 .SortByDescending(c => c.Metadata.LastActivityAt)
-                .Limit(20) // Limit to last 20 sessions
+                .Limit(20)
                 .ToListAsync();
+            sessions.AddRange(mongoSessions);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Mongo fetch failed in GetUserSessions: {ex.Message}");
+        }
 
-            return sessions.Select(s => new ChatSessionDto
+        // 2. Merge Memory (avoiding duplicates)
+        var memorySessions = InMemorySessions.Values
+            .Where(c => c.UserId == userId && c.IsActive)
+            .OrderByDescending(c => c.Metadata.LastActivityAt)
+            .Take(20)
+            .ToList();
+
+        foreach (var memSession in memorySessions)
+        {
+            if (!sessions.Any(s => s.SessionId == memSession.SessionId))
+            {
+                sessions.Add(memSession);
+            }
+        }
+
+        // 3. Sort final combined list
+        return sessions
+            .OrderByDescending(s => s.Metadata.LastActivityAt)
+            .Take(20)
+            .Select(s => new ChatSessionDto
             {
                 SessionId = s.SessionId,
                 LastMessage = s.Messages.LastOrDefault()?.Content?.Take(50).ToString() ?? "New Conversation",
                 LastActivityAt = s.Metadata.LastActivityAt
-            }).ToList();
-        }
-        catch
-        {
-            // Fallback to memory
-            return InMemorySessions.Values
-                .Where(c => c.UserId == userId && c.IsActive)
-                .OrderByDescending(c => c.Metadata.LastActivityAt)
-                .Take(20)
-                .Select(s => new ChatSessionDto
-                {
-                    SessionId = s.SessionId,
-                    LastMessage = s.Messages.LastOrDefault()?.Content ?? "New Conversation",
-                    LastActivityAt = s.Metadata.LastActivityAt
-                })
-                .ToList();
-        }
+            })
+            .ToList();
     }
 
     private async Task<LinkerAIRecommendations> GenerateRecommendationsAsync(ChatHistory chatHistory)
