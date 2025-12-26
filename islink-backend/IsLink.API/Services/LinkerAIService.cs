@@ -684,9 +684,10 @@ public class LinkerAIService : ILinkerAIService
     private bool CheckIfComplete(string aiResponse, List<ChatMessage> messages)
     {
         // 1. Check strict indicators from AI text
+        // The AI is instructed to ONLY say these phrases after the user has confirmed the summary.
         var lowerResponse = aiResponse.ToLower();
         var indicators = new[] { 
-            "here are", "recommendation", "recommend", "suggest", "here's what", "found these", "options for you", "check out" 
+            "perfect! let me find", "recommendation", "here are the best", "searching for", "generating recommendations" 
         };
         
         if (indicators.Any(indicator => lowerResponse.Contains(indicator)) && messages.Any(m => m.Role == "user"))
@@ -694,34 +695,25 @@ public class LinkerAIService : ILinkerAIService
             return true;
         }
 
-        // 2. data-driven trigger: Do we have enough info?
-        var requirements = ExtractRequirements(messages);
+        // REMOVED: Data-driven heuristic (ProjectType + Budget). 
+        // We now strictly require the AI to conduct the confirmation flow.
         
-        // Return true if ProjectType IS known, AND (Budget OR Deadline) is known.
-        // This is a heuristic: usually project type + budget is enough to give good suggestions.
-        bool hasProjectType = !string.IsNullOrWhiteSpace(requirements.ProjectType);
-        bool hasBudget = requirements.Budget.HasValue;
-        bool hasDeadline = requirements.DeadlineDays.HasValue;
-
-        if (hasProjectType && (hasBudget || hasDeadline))
-        {
-            // Optional: You might want to check if the last message from user just provided this info,
-            // but simply checking state is robust.
-            return true;
-        }
-
         return false;
     }
 
     private string GetSystemPrompt()
     {
-        return @"You are LinkerAI on IsLink freelance marketplace. Help users find services.
+        return @"You are LinkerAI, an intelligent project assistant on IsLink.
+        
+GOAL: match the user with the best freelance services.
 
-RULES:
-- Ask ONE question at a time
-- Get: project type, budget (USD), deadline, requirements
-- Be brief and helpful
-- When you have all info, say: ""Perfect! Let me find the best services for you...""";
+PROTOCOL:
+1. Ask questions ONE BY ONE to gather: Project Type, Budget (approx USD), Deadline, and Specific Requirements.
+2. Once you have a rough idea, SUMMARIZE the requirements clearly to the user.
+3. ASK for confirmation: ""Is this correct?""
+4. ONLY after the user confirms (says yes/correct), say exactly: ""Perfect! Let me find the best services for you...""
+
+TONE: Professional, concise, friendly. Do not output markdown lists during the gathering phase. Keep it conversational.";
     }
 
     private class ExtractedRequirements

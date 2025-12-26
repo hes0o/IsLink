@@ -307,13 +307,13 @@ function LinkerAI() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder="Message LinkerAI..."
-                disabled={loading || !sessionId}
+                placeholder={recommendations ? "Conversation completed." : "Message LinkerAI..."}
+                disabled={loading || !sessionId || !!recommendations}
                 className="chat-input"
               />
               <button
                 type="submit"
-                disabled={loading || !sessionId || !inputMessage.trim()}
+                disabled={loading || !sessionId || !inputMessage.trim() || !!recommendations}
                 className="chat-send-button"
               >
                 ➤
