@@ -11,6 +11,25 @@ public static class DbSeeder
         
         // Clear existing data to ensure fresh seed
         Console.WriteLine("🧹 Clearing existing seed data...");
+
+        // FIX: Ensure ChatSessions has Title column (Migration workaround for existing DBs)
+        try 
+        {
+            // Simple check to avoid crashing if table doesn't exist yet (EnsureCreated handles creation, but this handles update)
+            await context.Database.ExecuteSqlRawAsync(@"
+                DO $$ 
+                BEGIN 
+                    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'ChatSessions') THEN
+                        ALTER TABLE ""ChatSessions"" ADD COLUMN IF NOT EXISTS ""Title"" text DEFAULT 'New Chat';
+                    END IF;
+                END $$;
+            ");
+            Console.WriteLine("✅ Schema updated: Added Title to ChatSessions");
+        }
+        catch (Exception ex)
+        {
+             Console.WriteLine($"⚠️ Schema update note (ignore if new DB): {ex.Message}");
+        }
         
         // Clear in proper order to respect foreign keys
         if (await context.Reviews.AnyAsync())
@@ -745,7 +764,7 @@ public static class DbSeeder
                 "custom-ecommerce-website",
                 "Launch your online store with a custom e-commerce solution! Built with modern technologies, including shopping cart, payment integration (Stripe/PayPal), inventory management, and admin dashboard. Fully responsive and SEO-optimized.",
                 5.0m, 34, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ecommerce-website.jpg" },
+                new[] { "https://images.unsplash.com/photo-1556742049-0cfed4f7a07d?w=800&h=600&fit=crop" },
                 new[] { "ecommerce", "online store", "stripe", "shopify" },
                 300, 600, 1000, 14, 21, 30
             ),
@@ -755,7 +774,7 @@ public static class DbSeeder
                 "fix-bugs-optimize-website",
                 "Having issues with your website? I'll fix bugs, improve performance, and optimize your code. Experienced with React, Angular, Vue, Node.js, PHP, and more. Fast turnaround with detailed documentation.",
                 4.9m, 56, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/bug-fix.jpg" },
+                new[] { "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&h=600&fit=crop" },
                 new[] { "bug fix", "optimization", "debugging", "performance" },
                 30, 75, 150, 1, 3, 5
             ),
@@ -767,7 +786,7 @@ public static class DbSeeder
                 "seo-optimized-blog-posts-articles",
                 "Get high-quality, SEO-optimized content that ranks! I write engaging blog posts and articles that drive traffic to your website. Native Arabic speaker with excellent English skills. Niche expertise in tech, business, and lifestyle.",
                 4.8m, 64, 8,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/seo-writing.jpg" },
+                new[] { "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=800&h=600&fit=crop" },
                 new[] { "blog writing", "SEO", "content writing", "articles" },
                 15, 30, 60, 2, 3, 5
             ),
@@ -777,7 +796,7 @@ public static class DbSeeder
                 "arabic-english-translation",
                 "Professional Arabic-English translation services. Accurate, culturally-sensitive translations for business documents, marketing materials, legal papers, and more. Native Arabic speaker with 10+ years of translation experience.",
                 4.9m, 41, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/translation.jpg" },
+                new[] { "https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&h=600&fit=crop" },
                 new[] { "translation", "arabic", "english", "documents" },
                 20, 50, 100, 2, 4, 7
             ),
@@ -787,7 +806,7 @@ public static class DbSeeder
                 "compelling-website-copy",
                 "Your website deserves words that convert! I write persuasive website copy that engages visitors and drives action. From landing pages to About Us sections, I'll craft copy that reflects your brand voice.",
                 4.7m, 28, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/copywriting.jpg" },
+                new[] { "https://images.unsplash.com/photo-1519337265831-281ec6cc8514?w=800&h=600&fit=crop" },
                 new[] { "copywriting", "website copy", "landing page", "conversion" },
                 40, 80, 150, 3, 5, 7
             ),
@@ -799,7 +818,7 @@ public static class DbSeeder
                 "professional-youtube-video-editing",
                 "Transform your raw footage into engaging YouTube content! I provide professional video editing with color correction, transitions, sound design, and motion graphics. Let's make your channel stand out and grow!",
                 4.7m, 45, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/youtube-editing.jpg" },
+                new[] { "https://images.unsplash.com/photo-1574717432729-24e53b879425?w=800&h=600&fit=crop" },
                 new[] { "video editing", "youtube", "premiere pro", "motion graphics" },
                 35, 75, 150, 3, 5, 7
             ),
@@ -809,7 +828,7 @@ public static class DbSeeder
                 "animated-explainer-videos",
                 "Explain your product or service with an engaging animated video! Perfect for startups, apps, and services. Includes script writing, voice-over coordination, and unlimited revisions.",
                 4.8m, 22, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/explainer-video.jpg" },
+                new[] { "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=800&h=600&fit=crop" },
                 new[] { "animation", "explainer video", "after effects", "motion graphics" },
                 100, 200, 400, 7, 10, 14
             ),
@@ -821,7 +840,7 @@ public static class DbSeeder
                 "social-media-management-growth",
                 "Struggling to grow your social media presence? I offer complete social media management including content creation, scheduling, engagement, and analytics. Let's build your brand together!",
                 4.9m, 93, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/social-media-management.jpg" },
+                new[] { "https://images.unsplash.com/photo-1611926653458-09294b3142bf?w=800&h=600&fit=crop" },
                 new[] { "social media", "marketing", "instagram", "facebook" },
                 50, 150, 300, 7, 30, 30
             ),
@@ -831,7 +850,7 @@ public static class DbSeeder
                 "facebook-instagram-ads-campaigns",
                 "Get more leads and sales with targeted Facebook and Instagram ads! I'll create, manage, and optimize your ad campaigns for maximum ROI. Includes audience research, ad copy, and detailed reporting.",
                 4.8m, 67, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/facebook-ads.jpg" },
+                new[] { "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=600&fit=crop" },
                 new[] { "facebook ads", "instagram ads", "PPC", "advertising" },
                 100, 250, 500, 7, 14, 30
             ),
@@ -841,7 +860,7 @@ public static class DbSeeder
                 "complete-seo-optimization",
                 "Rank higher on Google with comprehensive SEO! Includes keyword research, on-page optimization, technical SEO audit, backlink strategy, and monthly progress reports. White-hat techniques only.",
                 4.9m, 48, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/seo-optimization.jpg" },
+                new[] { "https://images.unsplash.com/photo-1571786256017-aee7a0c009b6?w=800&h=600&fit=crop" },
                 new[] { "SEO", "google ranking", "keywords", "optimization" },
                 75, 200, 400, 7, 14, 30
             ),
@@ -853,7 +872,7 @@ public static class DbSeeder
                 "professional-mixing-mastering",
                 "Get radio-ready sound with professional mixing and mastering! 8 years of experience in the music industry. Your track will sound polished, balanced, and ready for release on all platforms.",
                 4.8m, 72, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/mixing-mastering.jpg" },
+                new[] { "https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&h=600&fit=crop" },
                 new[] { "mixing", "mastering", "music production", "audio" },
                 50, 100, 200, 3, 5, 7
             ),
@@ -863,7 +882,7 @@ public static class DbSeeder
                 "professional-voice-over",
                 "Need a professional voice for your project? I offer voice-over services in Arabic and English for commercials, explainer videos, audiobooks, and more. Fast delivery with unlimited revisions.",
                 4.7m, 35, 7,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/voice-over.jpg" },
+                new[] { "https://images.unsplash.com/photo-1590602847861-f357a9332bbc?w=800&h=600&fit=crop" },
                 new[] { "voice over", "narration", "commercial", "audiobook" },
                 25, 50, 100, 1, 2, 3
             ),
@@ -875,7 +894,7 @@ public static class DbSeeder
                 "custom-ai-chatbot-business",
                 "Automate customer support with an intelligent AI chatbot! I build custom chatbots using GPT-4, integrated with your website or app. Trained on your business data for accurate responses.",
                 5.0m, 38, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-chatbot.jpg" },
+                new[] { "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop" },
                 new[] { "AI chatbot", "GPT", "automation", "customer support" },
                 200, 500, 1000, 7, 14, 21
             ),
@@ -885,7 +904,7 @@ public static class DbSeeder
                 "automate-workflows-ai",
                 "Save time and reduce errors with AI automation! I'll analyze your workflows and implement AI solutions using Python, APIs, and machine learning. From data processing to report generation.",
                 5.0m, 24, 1,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-automation.jpg" },
+                new[] { "https://images.unsplash.com/photo-1555255707-c07966088b7b?w=800&h=600&fit=crop" },
                 new[] { "AI automation", "python", "machine learning", "workflow" },
                 150, 350, 700, 5, 10, 14
             ),
@@ -897,7 +916,7 @@ public static class DbSeeder
                 "professional-business-plan",
                 "Need funding or strategic direction? I create comprehensive business plans including market analysis, financial projections, and growth strategies. Perfect for startups and established businesses.",
                 4.6m, 54, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/business-plan.jpg" },
+                new[] { "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" },
                 new[] { "business plan", "startup", "financial projections", "strategy" },
                 100, 250, 500, 5, 7, 14
             ),
@@ -907,7 +926,7 @@ public static class DbSeeder
                 "virtual-assistant-week",
                 "Need help managing your workload? I provide professional virtual assistance including email management, scheduling, research, data entry, and customer support. Let me handle the busy work!",
                 4.5m, 28, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/virtual-assistant.jpg" },
+                new[] { "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=600&fit=crop" },
                 new[] { "virtual assistant", "admin support", "data entry", "scheduling" },
                 50, 100, 200, 7, 7, 7
             ),
@@ -919,7 +938,7 @@ public static class DbSeeder
                 "custom-wordpress-website",
                 "Get a professional WordPress website tailored to your needs! Custom theme development, plugin integration, WooCommerce setup, and full responsive design. SEO optimized and fast loading.",
                 4.8m, 156, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/wordpress-website.jpg" },
+                new[] { "https://images.unsplash.com/photo-1616469829941-c7200edec809?w=800&h=600&fit=crop" },
                 new[] { "wordpress", "website", "woocommerce", "custom theme" },
                 80, 200, 400, 5, 10, 14
             ),
@@ -929,7 +948,7 @@ public static class DbSeeder
                 "woocommerce-store-setup",
                 "Launch your online store with WooCommerce! Complete setup including product configuration, payment gateways, shipping options, and store customization. Ready to sell!",
                 4.9m, 89, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/woocommerce-store.jpg" },
+                new[] { "https://images.unsplash.com/photo-1556742111-a301076d9d18?w=800&h=600&fit=crop" },
                 new[] { "woocommerce", "ecommerce", "online store", "shopify alternative" },
                 150, 350, 600, 7, 14, 21
             ),
@@ -941,7 +960,7 @@ public static class DbSeeder
                 "professional-photo-editing",
                 "Transform your photos with professional editing! Color correction, retouching, background removal, and enhancement. Perfect for portraits, products, and social media content.",
                 4.9m, 112, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/photo-editing.jpg" },
+                new[] { "https://images.unsplash.com/photo-1550948956-65b828882ae7?w=800&h=600&fit=crop" },
                 new[] { "photo editing", "photoshop", "retouching", "color correction" },
                 15, 35, 70, 1, 2, 3
             ),
@@ -951,7 +970,7 @@ public static class DbSeeder
                 "product-photos-white-background",
                 "Professional product photography with clean white backgrounds. Perfect for e-commerce stores, Amazon listings, and catalogs. High-resolution images ready to use.",
                 4.8m, 67, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-photography.jpg" },
+                new[] { "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=600&fit=crop" },
                 new[] { "product photography", "white background", "ecommerce", "amazon" },
                 20, 50, 100, 2, 3, 5
             ),
@@ -963,7 +982,7 @@ public static class DbSeeder
                 "ios-android-mobile-app",
                 "Build your app once, deploy everywhere! React Native mobile app development for both iOS and Android. Native performance with cross-platform efficiency.",
                 5.0m, 87, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/mobile-app.jpg" },
+                new[] { "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop" },
                 new[] { "react native", "mobile app", "ios", "android" },
                 200, 500, 1000, 14, 21, 30
             ),
@@ -973,7 +992,7 @@ public static class DbSeeder
                 "fix-mobile-app-bugs",
                 "Having issues with your mobile app? I'll debug, fix crashes, optimize performance, and ensure smooth operation on both iOS and Android platforms.",
                 4.9m, 45, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/app-bug-fix.jpg" },
+                new[] { "https://images.unsplash.com/photo-1551650975-87deedd944c3?w=800&h=600&fit=crop" },
                 new[] { "bug fix", "mobile app", "debugging", "optimization" },
                 40, 100, 200, 2, 5, 7
             ),
@@ -985,7 +1004,7 @@ public static class DbSeeder
                 "professional-arabic-voice-over",
                 "Native Arabic speaker providing professional voice-over services. Perfect for commercials, explainer videos, e-learning, and narration. Warm, clear, and engaging voice.",
                 4.9m, 203, 7,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/arabic-voice.jpg" },
+                new[] { "https://images.unsplash.com/photo-1478737270239-2f02b77ac6d5?w=800&h=600&fit=crop" },
                 new[] { "voice over", "arabic", "commercial", "narration" },
                 30, 70, 140, 1, 2, 3
             ),
@@ -995,7 +1014,7 @@ public static class DbSeeder
                 "audiobook-narration-arabic-english",
                 "Bring your book to life with professional audiobook narration! Experienced narrator with recording studio quality. Available in both Arabic and English.",
                 5.0m, 56, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/audiobook-narration.jpg" },
+                new[] { "https://images.unsplash.com/photo-1519791883288-dc8bd696e667?w=800&h=600&fit=crop" },
                 new[] { "audiobook", "narration", "voice over", "book" },
                 100, 250, 500, 14, 21, 30
             ),
@@ -1007,7 +1026,7 @@ public static class DbSeeder
                 "3d-models-games-products",
                 "High-quality 3D models for games, product visualization, or marketing. Low-poly or high-detail models with textures and materials. Ready for your project!",
                 4.7m, 94, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/3d-modeling.jpg" },
+                new[] { "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800&h=600&fit=crop" },
                 new[] { "3d modeling", "blender", "maya", "3d models" },
                 50, 120, 250, 3, 5, 7
             ),
@@ -1017,7 +1036,7 @@ public static class DbSeeder
                 "3d-product-animations",
                 "Showcase your product with stunning 3D animations! Perfect for marketing, commercials, and social media. Professional quality that grabs attention.",
                 4.8m, 38, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/3d-animation.jpg" },
+                new[] { "https://images.unsplash.com/photo-1633412802994-5c058f151b66?w=800&h=600&fit=crop" },
                 new[] { "3d animation", "product animation", "commercial", "motion graphics" },
                 80, 180, 350, 5, 7, 10
             ),
@@ -1029,7 +1048,7 @@ public static class DbSeeder
                 "data-analysis-visualizations",
                 "Turn your raw data into actionable insights! Data analysis, statistical modeling, and beautiful visualizations using Python, Tableau, and Power BI. Detailed reports included.",
                 4.8m, 71, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/data-analysis.jpg" },
+                new[] { "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop" },
                 new[] { "data analysis", "python", "tableau", "visualization" },
                 60, 150, 300, 3, 5, 7
             ),
@@ -1039,7 +1058,7 @@ public static class DbSeeder
                 "interactive-dashboards-tableau-powerbi",
                 "Transform your business data into interactive dashboards! Real-time insights, beautiful visualizations, and user-friendly interfaces. Perfect for executives and teams.",
                 4.9m, 42, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/dashboard.jpg" },
+                new[] { "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" },
                 new[] { "tableau", "power bi", "dashboard", "business intelligence" },
                 100, 250, 500, 5, 7, 10
             ),
@@ -1051,7 +1070,7 @@ public static class DbSeeder
                 "modern-ui-ux-design",
                 "User-centered design that converts! Complete UI/UX design including wireframes, mockups, prototypes, and design systems. Figma files included with handoff documentation.",
                 4.9m, 128, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ui-ux-design.jpg" },
+                new[] { "https://images.unsplash.com/photo-1586717791821-3f44a5638d0f?w=800&h=600&fit=crop" },
                 new[] { "ui design", "ux design", "figma", "prototype" },
                 100, 250, 500, 5, 10, 14
             ),
@@ -1061,7 +1080,7 @@ public static class DbSeeder
                 "website-app-redesign",
                 "Modernize your digital presence with a complete redesign! Improved user experience, updated visuals, and better conversion rates. Based on UX best practices.",
                 4.8m, 73, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/redesign.jpg" },
+                new[] { "https://images.unsplash.com/photo-1581291518633-83b4ebd1d83e?w=800&h=600&fit=crop" },
                 new[] { "redesign", "ui ux", "modern design", "conversion optimization" },
                 150, 350, 700, 7, 14, 21
             ),
@@ -1075,7 +1094,7 @@ public static class DbSeeder
                 "custom-illustrations-digital-artwork",
                 "Unique illustrations and digital artwork for your projects! Character design, book illustrations, concept art, and custom graphics. Available in various styles from cartoon to realistic.",
                 4.8m, 92, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/illustrations.jpg" },
+                new[] { "https://images.unsplash.com/photo-1626785774573-4b799314346d?w=800&h=600&fit=crop" },
                 new[] { "illustration", "digital art", "character design", "artwork" },
                 40, 90, 180, 3, 5, 7
             ),
@@ -1085,7 +1104,7 @@ public static class DbSeeder
                 "custom-flyers-posters-design",
                 "Eye-catching flyers and posters for your events, promotions, or business! Professional design with print-ready files. Fast turnaround and unlimited revisions.",
                 4.7m, 156, 8,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/flyers.jpg" },
+                new[] { "https://images.unsplash.com/photo-1558655146-d09347e92766?w=800&h=600&fit=crop" },
                 new[] { "flyer design", "poster design", "print design", "marketing materials" },
                 20, 45, 90, 2, 3, 5
             ),
@@ -1095,7 +1114,7 @@ public static class DbSeeder
                 "professional-business-cards-design",
                 "Stand out with professionally designed business cards! Modern and elegant designs that represent your brand. Print-ready files included. Multiple design concepts.",
                 4.9m, 203, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/business-cards.jpg" },
+                new[] { "https://images.unsplash.com/photo-1634942537034-2531766767d1?w=800&h=600&fit=crop" },
                 new[] { "business cards", "card design", "print design", "branding" },
                 15, 35, 70, 1, 2, 3
             ),
@@ -1107,7 +1126,7 @@ public static class DbSeeder
                 "restful-api-dotnet-core",
                 "Build robust REST APIs with .NET Core! Clean architecture, authentication, documentation, and testing included. Scalable and production-ready code.",
                 5.0m, 67, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/api-development.jpg" },
+                new[] { "https://images.unsplash.com/photo-1605379399642-870262d3d051?w=800&h=600&fit=crop" },
                 new[] { "api", ".net core", "rest api", "backend" },
                 150, 350, 700, 5, 10, 14
             ),
@@ -1117,7 +1136,7 @@ public static class DbSeeder
                 "wordpress-theme-customization",
                 "Make your WordPress site unique with custom theme modifications! CSS tweaks, functionality additions, and layout changes. Responsive design ensured.",
                 4.8m, 124, 7,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/wordpress-custom.jpg" },
+                new[] { "https://images.unsplash.com/photo-1616469829941-c7200edec809?w=800&h=600&fit=crop" },
                 new[] { "wordpress", "theme customization", "php", "css" },
                 30, 75, 150, 2, 4, 7
             ),
@@ -1127,7 +1146,7 @@ public static class DbSeeder
                 "website-to-mobile-app-conversion",
                 "Transform your website into a native mobile app! React Native or Flutter. App store submission support included. Cross-platform iOS and Android.",
                 4.9m, 56, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/website-to-app.jpg" },
+                new[] { "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?w=800&h=600&fit=crop" },
                 new[] { "mobile app", "react native", "flutter", "ios android" },
                 200, 500, 1000, 10, 14, 21
             ),
@@ -1137,7 +1156,7 @@ public static class DbSeeder
                 "cicd-pipeline-setup",
                 "Automate your deployment with CI/CD pipelines! GitHub Actions, GitLab CI, or Jenkins. Automated testing, building, and deployment. Documentation included.",
                 4.9m, 38, 1,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/cicd.jpg" },
+                new[] { "https://images.unsplash.com/photo-1610433572201-110753c6cff9?w=800&h=600&fit=crop" },
                 new[] { "CI/CD", "devops", "automation", "deployment" },
                 80, 200, 400, 3, 5, 7
             ),
@@ -1149,7 +1168,7 @@ public static class DbSeeder
                 "professional-product-descriptions",
                 "Compelling product descriptions that sell! SEO-optimized, conversion-focused copy for your e-commerce store. Multiple formats and styles available.",
                 4.9m, 187, 9,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-descriptions.jpg" },
+                new[] { "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&h=600&fit=crop" },
                 new[] { "product descriptions", "copywriting", "ecommerce", "seo" },
                 10, 25, 50, 1, 2, 3
             ),
@@ -1159,7 +1178,7 @@ public static class DbSeeder
                 "proofreading-editing-documents",
                 "Polish your writing with professional proofreading and editing! Grammar, spelling, punctuation, and style corrections. Fast turnaround for any document type.",
                 4.8m, 234, 12,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/proofreading.jpg" },
+                new[] { "https://images.unsplash.com/photo-1503551723145-6c0407420518?w=800&h=600&fit=crop" },
                 new[] { "proofreading", "editing", "grammar", "writing" },
                 15, 40, 80, 1, 2, 3
             ),
@@ -1169,7 +1188,7 @@ public static class DbSeeder
                 "engaging-social-media-posts",
                 "Boost your social media engagement with catchy posts! Content for Instagram, Facebook, Twitter, LinkedIn. Hashtag research included. Multiple posts per order.",
                 4.7m, 312, 15,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/social-posts.jpg" },
+                new[] { "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&h=600&fit=crop" },
                 new[] { "social media", "content writing", "instagram", "facebook" },
                 20, 50, 100, 2, 3, 5
             ),
@@ -1181,7 +1200,7 @@ public static class DbSeeder
                 "professional-product-demo-videos",
                 "Showcase your product with engaging demo videos! High-quality production with music, graphics, and professional editing. Perfect for marketing and sales.",
                 4.8m, 89, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/product-demo.jpg" },
+                new[] { "https://images.unsplash.com/photo-1536240478700-b869070f9279?w=800&h=600&fit=crop" },
                 new[] { "product video", "demo video", "marketing video", "commercial" },
                 60, 140, 280, 3, 5, 7
             ),
@@ -1191,7 +1210,7 @@ public static class DbSeeder
                 "video-subtitles-captions",
                 "Make your videos accessible with professional subtitles and captions! Multiple languages supported. SRT files included. Fast delivery and accurate transcription.",
                 4.9m, 267, 11,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/subtitles.jpg" },
+                new[] { "https://images.unsplash.com/photo-1611162616475-46b635cb6868?w=800&h=600&fit=crop" },
                 new[] { "subtitles", "captions", "transcription", "accessibility" },
                 15, 35, 70, 1, 2, 3
             ),
@@ -1201,7 +1220,7 @@ public static class DbSeeder
                 "logo-animations-motion-graphics",
                 "Bring your logo to life with stunning animations! Professional motion graphics for intros, outros, and brand identity. After Effects animations included.",
                 4.8m, 145, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/logo-animation.jpg" },
+                new[] { "https://images.unsplash.com/photo-1626785774573-4b799314346d?w=800&h=600&fit=crop" },
                 new[] { "logo animation", "motion graphics", "after effects", "intro" },
                 50, 120, 250, 3, 5, 7
             ),
@@ -1213,7 +1232,7 @@ public static class DbSeeder
                 "google-ads-campaigns-management",
                 "Drive traffic and conversions with optimized Google Ads! Campaign setup, keyword research, ad copy creation, and ongoing management. Detailed reporting included.",
                 4.9m, 178, 5,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/google-ads.jpg" },
+                new[] { "https://images.unsplash.com/photo-1563986768609-322da13575f3?w=800&h=600&fit=crop" },
                 new[] { "google ads", "ppc", "advertising", "campaign management" },
                 100, 250, 500, 7, 14, 30
             ),
@@ -1223,7 +1242,7 @@ public static class DbSeeder
                 "seo-meta-descriptions-titles",
                 "Improve your search rankings with optimized meta tags! SEO-friendly titles and descriptions for all your pages. Keyword research included.",
                 4.8m, 423, 18,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/meta-tags.jpg" },
+                new[] { "https://images.unsplash.com/photo-1571786256017-aee7a0c009b6?w=800&h=600&fit=crop" },
                 new[] { "SEO", "meta tags", "meta descriptions", "keyword research" },
                 25, 60, 120, 1, 2, 3
             ),
@@ -1233,7 +1252,7 @@ public static class DbSeeder
                 "comprehensive-marketing-strategy",
                 "Develop a winning marketing strategy for your business! Market analysis, competitor research, target audience identification, and action plan. Complete roadmap included.",
                 4.9m, 94, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/marketing-strategy.jpg" },
+                new[] { "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop" },
                 new[] { "marketing strategy", "business strategy", "consulting", "planning" },
                 150, 350, 700, 7, 10, 14
             ),
@@ -1245,7 +1264,7 @@ public static class DbSeeder
                 "custom-background-music-videos",
                 "Original background music tailored to your videos! Various genres and moods. Royalty-free and exclusive rights. Perfect for YouTube, commercials, and films.",
                 4.8m, 156, 7,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/background-music.jpg" },
+                new[] { "https://images.unsplash.com/photo-1507838153414-b4b713384ebd?w=800&h=600&fit=crop" },
                 new[] { "background music", "music production", "royalty free", "custom music" },
                 40, 100, 200, 3, 5, 7
             ),
@@ -1255,7 +1274,7 @@ public static class DbSeeder
                 "remove-background-noise-audio",
                 "Clean up your audio recordings! Professional noise removal and audio enhancement. Perfect for podcasts, interviews, and voice recordings.",
                 4.9m, 289, 14,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/noise-removal.jpg" },
+                new[] { "https://images.unsplash.com/photo-1615655406736-b37c4fabf923?w=800&h=600&fit=crop" },
                 new[] { "audio editing", "noise removal", "audio cleanup", "podcast" },
                 20, 50, 100, 1, 2, 3
             ),
@@ -1265,7 +1284,7 @@ public static class DbSeeder
                 "sound-effects-video-audio",
                 "Enhance your projects with professional sound effects! Extensive library of high-quality sounds. Perfect sync and timing. Multiple formats available.",
                 4.8m, 112, 6,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/sound-effects.jpg" },
+                new[] { "https://images.unsplash.com/photo-1614149162883-504ce4d13909?w=800&h=600&fit=crop" },
                 new[] { "sound effects", "audio design", "foley", "post production" },
                 25, 60, 120, 2, 3, 5
             ),
@@ -1277,7 +1296,7 @@ public static class DbSeeder
                 "excel-spreadsheets-templates",
                 "Professional Excel spreadsheets and templates for your business needs! Formulas, charts, automation, and dashboards. Customizable and user-friendly.",
                 4.8m, 267, 13,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/excel-templates.jpg" },
+                new[] { "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=800&h=600&fit=crop" },
                 new[] { "excel", "spreadsheet", "templates", "data analysis" },
                 20, 50, 100, 2, 3, 5
             ),
@@ -1287,7 +1306,7 @@ public static class DbSeeder
                 "powerpoint-presentations-design",
                 "Stunning PowerPoint presentations that impress! Professional design, animations, and templates. Perfect for business, education, or marketing.",
                 4.9m, 334, 16,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/powerpoint.jpg" },
+                new[] { "https://images.unsplash.com/photo-1543269865-cbf427effbad?w=800&h=600&fit=crop" },
                 new[] { "powerpoint", "presentation", "slides", "design" },
                 30, 75, 150, 2, 4, 7
             ),
@@ -1297,7 +1316,7 @@ public static class DbSeeder
                 "market-research-analysis",
                 "Data-driven market research for your business! Industry analysis, competitor research, target audience insights, and strategic recommendations.",
                 4.8m, 78, 2,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/market-research.jpg" },
+                new[] { "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&h=600&fit=crop" },
                 new[] { "market research", "business analysis", "competitor research", "strategy" },
                 100, 250, 500, 5, 7, 10
             ),
@@ -1309,7 +1328,7 @@ public static class DbSeeder
                 "ai-generated-images-artwork",
                 "Stunning AI-generated images for your projects! Custom artwork, product photos, concept art, and marketing visuals. Multiple styles and variations.",
                 4.9m, 156, 8,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-images.jpg" },
+                new[] { "https://images.unsplash.com/photo-1620641788421-7f1c338e420a?w=800&h=600&fit=crop" },
                 new[] { "AI images", "ai art", "generated images", "midjourney" },
                 25, 60, 120, 1, 2, 3
             ),
@@ -1319,7 +1338,7 @@ public static class DbSeeder
                 "fine-tune-ai-models",
                 "Custom AI models trained on your data! Fine-tuning GPT, BERT, or other models for specific tasks. Data preprocessing and model optimization included.",
                 5.0m, 45, 1,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-finetuning.jpg" },
+                new[] { "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=800&h=600&fit=crop" },
                 new[] { "AI training", "machine learning", "fine-tuning", "custom model" },
                 300, 700, 1500, 10, 14, 21
             ),
@@ -1329,7 +1348,7 @@ public static class DbSeeder
                 "ai-powered-data-analysis",
                 "Automate your data analysis with AI! Python scripts using machine learning for pattern recognition, predictions, and insights. Documentation included.",
                 4.9m, 67, 3,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-analysis.jpg" },
+                new[] { "https://images.unsplash.com/photo-1518186285589-2f7649de83e0?w=800&h=600&fit=crop" },
                 new[] { "AI analysis", "machine learning", "data science", "python" },
                 100, 250, 500, 5, 7, 10
             ),
@@ -1339,7 +1358,7 @@ public static class DbSeeder
                 "ai-content-generator",
                 "Automate content creation with AI! Custom content generator for blogs, social media, product descriptions, or emails. API integration available.",
                 4.8m, 89, 4,
-                new[] { "https://fiverr-res.cloudinary.com/images/t_main1,q_auto,f_auto,q_auto,f_auto/gigs/ai-content.jpg" },
+                new[] { "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=800&h=600&fit=crop" },
                 new[] { "AI content", "content generator", "automation", "GPT" },
                 150, 350, 700, 7, 10, 14
             )

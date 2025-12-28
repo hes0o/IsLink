@@ -14,6 +14,9 @@ public class ChatSession
     [MaxLength(100)]
     public string UserId { get; set; } = string.Empty;
 
+    [MaxLength(200)]
+    public string Title { get; set; } = "New Chat";
+
     public DateTime StartedAt { get; set; } = DateTime.UtcNow;
 
     public DateTime LastActivityAt { get; set; } = DateTime.UtcNow;

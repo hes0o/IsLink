@@ -199,6 +199,26 @@ public class LinkerAIService : ILinkerAIService
         chatSession.Messages.Add(userMsg);
         _context.ChatMessages.Add(userMsg); // Explicit add to ensure tracking
 
+        // 3. Auto-Generate Title if this is the first user message
+        if (chatSession.Messages.Count(m => m.Role == "user") == 1 && (string.IsNullOrEmpty(chatSession.Title) || chatSession.Title == "New Chat"))
+        {
+            try 
+            {
+                var titlePrompt = $"Summarize the following user request into a very short title (max 5 words). Return ONLY the title text, no quotes, no prefixes.\n\nUser Request: {request.Message}";
+                var titleResult = await TryGroqAsync(titlePrompt); // Reusing existing helper
+                if (titleResult.Success)
+                {
+                    chatSession.Title = titleResult.Text.Trim().Trim('"').Trim('.');
+                    // We don't save yet, it will be saved with the AI response below
+                }
+            } 
+            catch (Exception ex) 
+            {
+                Console.WriteLine($"⚠️ Failed to generate title: {ex.Message}");
+                // Ignore title failure, proceed with chat
+            }
+        }
+
         // Build conversation context for Gemini
         var systemMessage = chatSession.Messages.FirstOrDefault(m => m.Role == "system");
         var systemPrompt = systemMessage?.Content ?? GetSystemPrompt();
@@ -402,6 +422,7 @@ public class LinkerAIService : ILinkerAIService
             return sessions.Select(s => new ChatSessionDto
             {
                 SessionId = s.SessionId,
+                Title = s.Title, // Map Title
                 LastMessage = s.Messages.LastOrDefault()?.Content?.Take(50).ToString() ?? "New Conversation",
                 LastActivityAt = s.LastActivityAt
             }).ToList();

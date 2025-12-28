@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { linkerAIAPI } from '../../services/api';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
-import './LinkerAI.v2.css';
+import './LinkerAI.v3.css';
 
 function LinkerAI() {
   const [sessionId, setSessionId] = useState(null);
@@ -16,9 +16,16 @@ function LinkerAI() {
   const messagesEndRef = useRef(null);
   const chatContainerRef = useRef(null);
 
+  // Gemini-like "Starter Chips"
+  const starterChips = [
+    { label: "Build a new e-commerce site", prompt: "I want to build a new e-commerce website for my clothing brand." },
+    { label: "Create a marketing plan", prompt: "I need a marketing plan for my mobile app launch." },
+    { label: "Fix bugs in my React app", prompt: "I have some bugs in my React application that need fixing." },
+    { label: "Design a logo", prompt: "I need a professional logo design for a tech startup." }
+  ];
+
   useEffect(() => {
     // Only load history on mount. 
-    // We DO NOT auto-load the active session anymore to give user control.
     loadHistory();
   }, []);
 
@@ -27,46 +34,6 @@ function LinkerAI() {
       scrollToBottom();
     }
   }, [messages, loading]);
-
-  // Removed checkActiveSession from auto-startup
-  // It is now only internal or triggered by explicit action if needed.
-  const checkActiveSession = async () => {
-    // Kept for reference or explicit "Resume" button if we add one later
-    // For now, we rely on loadSession(id) from the sidebar.
-    try {
-      setLoading(true);
-      const session = await linkerAIAPI.getActiveSession();
-      if (session && (session.Success ?? session.success)) {
-        // Restore session
-        setSessionId(session.SessionId || session.sessionId);
-        const lastMsg = session.Message || session.message;
-
-        if (lastMsg) {
-          setMessages([{
-            role: 'assistant',
-            content: lastMsg,
-            timestamp: new Date()
-          }]);
-        }
-
-        // Restore recommendations if available
-        const isComplete = session.IsComplete ?? session.isComplete;
-        const recs = session.Recommendations || session.recommendations;
-        if (isComplete && recs) {
-          setRecommendations(recs);
-        }
-      } else {
-        // No active session, start new
-        await startConversation();
-      }
-    } catch (error) {
-      console.error('Failed to restore session:', error);
-      // Fallback to new session
-      await startConversation();
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadHistory = async () => {
     try {
@@ -114,7 +81,6 @@ function LinkerAI() {
       console.error('Failed to load session details', err);
       setErrorBanner('Failed to load conversation history');
     } finally {
-      // Close sidebar on mobile if needed (optional)
       if (window.innerWidth < 768) {
         setShowHistory(false);
       }
@@ -122,32 +88,20 @@ function LinkerAI() {
     }
   };
 
-  // FIX: Improved Image URL handling
+  // Improved Image URL handling
   const getImageUrl = (url) => {
     if (!url) return 'https://placehold.co/600x400?text=Service+Image';
-
-    // If it's already a full URL (http/https), use it
     if (url.startsWith('http')) return url;
-
-    // Handle relative paths
-    // Replace backslashes with forward slashes for web compatibility
     let cleanUrl = url.replace(/\\/g, '/');
-
-    // Remove leading slash if present to avoid double slashes with base URL
     if (cleanUrl.startsWith('/')) {
       cleanUrl = cleanUrl.slice(1);
     }
-
-    // Construct full URL pointing to the API public folder (or wherever images are served)
     const cleanBase = (import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001').replace(/\/$/, '');
-
     return `${cleanBase}/${cleanUrl}`;
   };
 
-  // Helper to safely access properties regardless of case
   const safeGet = (obj, key) => {
     if (!obj) return undefined;
-    // Try exact, camel, Pascal
     if (obj[key] !== undefined) return obj[key];
     const camel = key.charAt(0).toLowerCase() + key.slice(1);
     if (obj[camel] !== undefined) return obj[camel];
@@ -156,7 +110,6 @@ function LinkerAI() {
     return undefined;
   };
 
-  // NEW: Safe number formatting
   const safeFixed = (val, digits = 2) => {
     const num = Number(val);
     if (isNaN(num)) return '0.00';
@@ -167,49 +120,48 @@ function LinkerAI() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   };
 
-  // New Chat Functionality
   const handleNewChat = () => {
     setSessionId(null);
     setMessages([]);
     setRecommendations(null);
-    startConversation();
   };
 
-  const startConversation = async () => {
-    try {
-      setLoading(true);
-      setErrorBanner('');
-      const response = await linkerAIAPI.start();
-      const success = safeGet(response, 'success');
-      if (!success) {
-        throw new Error(safeGet(response, 'message') || 'Failed to start LinkerAI session');
+  const handleStarterClick = (prompt) => {
+    setInputMessage(prompt);
+    // Slight delay to ensure state update before submit if we wanted auto-send, 
+    // but better to just pre-fill or directly trigger.
+    // Let's directly trigger send logic for smooth UX
+    triggerSend(prompt);
+  };
+
+  // Separate send logic to allow external calls (chips)
+  const triggerSend = async (msgText) => {
+    if (!msgText.trim() || loading) return;
+
+    // Auto-start session if needed
+    let currentSessionId = sessionId;
+    if (!currentSessionId) {
+      try {
+        setLoading(true);
+        const response = await linkerAIAPI.start();
+        if (!safeGet(response, 'success')) throw new Error('Start failed');
+        currentSessionId = safeGet(response, 'sessionId');
+        setSessionId(currentSessionId);
+
+        // Note: We ignore the welcome message from start() since user is already "sending" their intent
+        // Or we insert it as the first message silently. 
+        // Gemini usually just starts answering the prompt.
+        // Let's silently start and then send the user message.
+      } catch (error) {
+        console.error(error);
+        setErrorBanner('Failed to start new conversation');
+        setLoading(false);
+        return;
       }
-
-      setSessionId(safeGet(response, 'sessionId'));
-      setMessages([{
-        role: 'assistant',
-        content: safeGet(response, 'message'),
-        timestamp: new Date()
-      }]);
-    } catch (error) {
-      console.error('Error starting conversation:', error);
-      const msg = error?.message || 'Unknown error';
-      setErrorBanner(msg);
-      setMessages([{
-        role: 'assistant',
-        content: `⚠️ LinkerAI error: ${msg}`,
-        timestamp: new Date()
-      }]);
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (!inputMessage.trim() || !sessionId || loading) return;
-
-    const messageToSend = inputMessage.trim();
+    // Now send the user message
+    const messageToSend = msgText.trim();
     setErrorBanner('');
     const userMessage = {
       role: 'user',
@@ -222,9 +174,8 @@ function LinkerAI() {
     setLoading(true);
 
     try {
-      const response = await linkerAIAPI.chat(sessionId, messageToSend);
-      const success = safeGet(response, 'success');
-      if (!success) {
+      const response = await linkerAIAPI.chat(currentSessionId, messageToSend);
+      if (!safeGet(response, 'success')) {
         throw new Error(safeGet(response, 'message') || 'LinkerAI request failed');
       }
 
@@ -234,31 +185,87 @@ function LinkerAI() {
         timestamp: new Date()
       }]);
 
-      // If recommendations are ready, set them
       const isComplete = safeGet(response, 'isComplete');
       const recs = safeGet(response, 'recommendations');
       if (isComplete && recs) {
         setRecommendations(recs);
       }
 
-      // Refresh history sidebar to show new message/session
       loadHistory();
     } catch (error) {
       console.error('Error sending message:', error);
-      const msg = error?.message || 'Unknown error';
-      setErrorBanner(msg);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `⚠️ LinkerAI error: ${msg}`,
-        timestamp: new Date()
-      }]);
+      setErrorBanner(error.message || 'Unknown error');
     } finally {
       setLoading(false);
     }
   };
 
-  // Helper to normalize recommendation access in JSX
+  const sendMessage = (e) => {
+    e.preventDefault();
+    triggerSend(inputMessage);
+  };
+
   const getRecProp = (obj, key) => safeGet(obj, key);
+
+  // Render Welcome Screen if no messages
+  const renderContent = () => {
+    if (messages.length === 0) {
+      return (
+        <div className="welcome-screen">
+          <div className="welcome-gradient">Hello, User</div>
+          <div className="welcome-subtitle">How can I help you today?</div>
+          <div className="starter-chips">
+            {starterChips.map((chip, idx) => (
+              <button
+                key={idx}
+                className="starter-chip"
+                onClick={() => handleStarterClick(chip.prompt)}
+              >
+                <p>{chip.label}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="chat-messages">
+        {messages.map((msg, index) => (
+          <div key={index} className={`message ${msg.role}`}>
+            <div className="message-avatar">
+              {msg.role === 'assistant' ?
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" opacity="0" />
+                  {/* Replaced with a simple star/sparkle for AI */}
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-1 1-1-1-2.5-1 2.5-1 1-1 1 1 2.5 1-2.5 1zm5.5-5.5l-2.5 1 2.5 1 1 1 1-1 2.5-1-2.5-1-1-1-1 1z" />
+                </svg>
+                : '👤'}
+            </div>
+            <div className="message-content">
+              <div className="message-name">{msg.role === 'assistant' ? 'LinkerAI' : 'You'}</div>
+              <div className="message-text">{msg.content}</div>
+            </div>
+          </div>
+        ))}
+
+        {loading && (
+          <div className="message assistant">
+            <div className="message-avatar">✨</div>
+            <div className="message-content">
+              <div className="message-name">LinkerAI</div>
+              <div className="message-text">
+                <div className="typing-indicator">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+    );
+  };
 
   return (
     <div className="linkerai-page">
@@ -281,7 +288,7 @@ function LinkerAI() {
                 onClick={() => loadSession(safeGet(sess, 'sessionId'))}
               >
                 <span>💬</span>
-                <span>{safeGet(sess, 'lastMessage') || 'New Conversation'}</span>
+                <span>{safeGet(sess, 'title') || safeGet(sess, 'lastMessage') || 'New Chat'}</span>
               </div>
             ))}
           </div>
@@ -308,34 +315,7 @@ function LinkerAI() {
             </div>
           )}
 
-          <div className="chat-messages">
-            {messages.map((msg, index) => (
-              <div key={index} className={`message ${msg.role}`}>
-                <div className="message-avatar">
-                  {msg.role === 'assistant' ? '🤖' : '👤'}
-                </div>
-                <div className="message-content">
-                  <div className="message-name">{msg.role === 'assistant' ? 'LinkerAI' : 'You'}</div>
-                  <div className="message-text">{msg.content}</div>
-                </div>
-              </div>
-            ))}
-
-            {loading && (
-              <div className="message assistant">
-                <div className="message-avatar">🤖</div>
-                <div className="message-content">
-                  <div className="message-name">LinkerAI</div>
-                  <div className="message-text">
-                    <div className="typing-indicator">
-                      <span></span><span></span><span></span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
+          {renderContent()}
 
           <div className="chat-input-container">
             <form className="chat-input-form" onSubmit={sendMessage}>
@@ -344,15 +324,19 @@ function LinkerAI() {
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 placeholder={recommendations ? "Conversation completed." : "Message LinkerAI..."}
-                disabled={loading || !sessionId || !!recommendations}
+                disabled={loading || !!recommendations}
                 className="chat-input"
               />
               <button
                 type="submit"
-                disabled={loading || !sessionId || !inputMessage.trim() || !!recommendations}
+                disabled={loading || !inputMessage.trim() || !!recommendations}
                 className="chat-send-button"
               >
-                ➤
+                {/* Send Icon */}
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="22" y1="2" x2="11" y2="13"></line>
+                  <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                </svg>
               </button>
             </form>
           </div>
