@@ -80,10 +80,46 @@ function LinkerAI() {
   };
 
   const loadSession = async (sessId) => {
-    // For MVP, just switching the active highlight visually
-    // In full implementation, we'd fetch the specific session details
-    console.log("Switching to session", sessId);
-    // TODO: Implement actual session fetch
+    if (sessId === sessionId) return;
+
+    try {
+      setLoading(true);
+      setErrorBanner('');
+      const resp = await linkerAIAPI.getSession(sessId);
+
+      const success = safeGet(resp, 'success');
+      const data = safeGet(resp, 'data');
+
+      if (success && data) {
+        setSessionId(safeGet(data, 'sessionId'));
+
+        // Transform messages
+        const msgs = safeGet(data, 'messages') || [];
+        setMessages(msgs.map(m => ({
+          role: safeGet(m, 'role'),
+          content: safeGet(m, 'content'),
+          timestamp: safeGet(m, 'timestamp')
+        })));
+
+        // Handle recommendations
+        const isComplete = safeGet(data, 'isComplete');
+        const recs = safeGet(data, 'recommendations');
+        if (isComplete && recs) {
+          setRecommendations(recs);
+        } else {
+          setRecommendations(null);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load session details', err);
+      setErrorBanner('Failed to load conversation history');
+    } finally {
+      // Close sidebar on mobile if needed (optional)
+      if (window.innerWidth < 768) {
+        setShowHistory(false);
+      }
+      setLoading(false);
+    }
   };
 
   // FIX: Improved Image URL handling

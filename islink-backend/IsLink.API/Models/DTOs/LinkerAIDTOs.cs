@@ -93,10 +93,27 @@ public class TimelineItem
     public int EndDay { get; set; }
 }
 
+
 public class ChatSessionDto
 {
     public string SessionId { get; set; } = string.Empty;
     public string LastMessage { get; set; } = string.Empty;
     public DateTime LastActivityAt { get; set; }
+}
+
+public class ChatSessionDetailDto
+{
+    public string SessionId { get; set; } = string.Empty;
+    public DateTime LastActivityAt { get; set; }
+    public List<ChatMessageDto> Messages { get; set; } = new();
+    public LinkerAIRecommendations? Recommendations { get; set; }
+    public bool IsComplete { get; set; }
+}
+
+public class ChatMessageDto
+{
+    public string Role { get; set; } = string.Empty;
+    public string Content { get; set; } = string.Empty;
+    public DateTime Timestamp { get; set; }
 }
 

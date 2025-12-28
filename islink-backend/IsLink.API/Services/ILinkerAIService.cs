@@ -9,5 +9,6 @@ public interface ILinkerAIService
     Task<LinkerAIRecommendations?> GetRecommendationsAsync(string sessionId);
     Task<LinkerAIChatResponse?> GetActiveSessionAsync(string userId);
     Task<List<ChatSessionDto>> GetUserSessionsAsync(string userId);
+    Task<ChatSessionDetailDto?> GetSessionAsync(string sessionId, string userId);
 }
 

@@ -227,6 +227,8 @@ export const linkerAIAPI = {
   getActiveSession: () => apiRequest('/linkerai/active'),
 
   getSessions: () => apiRequest('/linkerai/sessions'),
+
+  getSession: (sessionId) => apiRequest(`/linkerai/session/${sessionId}`),
 };
 
 export default {

@@ -344,6 +344,48 @@ public class LinkerAIService : ILinkerAIService
         };
     }
 
+    public async Task<ChatSessionDetailDto?> GetSessionAsync(string sessionId, string userId)
+    {
+        try
+        {
+            var session = await _context.ChatSessions
+                .Include(c => c.Messages)
+                .FirstOrDefaultAsync(c => c.SessionId == sessionId && c.UserId == userId && c.IsActive);
+
+            if (session == null) return null;
+
+            // Check for recommendations
+            LinkerAIRecommendations? recommendations = null;
+            var lastMsg = session.Messages.LastOrDefault(m => m.Role == "assistant");
+            if (lastMsg != null && CheckIfComplete(lastMsg.Content, session.Messages))
+            {
+                recommendations = await GenerateRecommendationsAsync(session);
+            }
+
+            return new ChatSessionDetailDto
+            {
+                SessionId = session.SessionId,
+                LastActivityAt = session.LastActivityAt,
+                Messages = session.Messages
+                    .Where(m => m.Role != "system")
+                    .OrderBy(m => m.Timestamp)
+                    .Select(m => new ChatMessageDto
+                    {
+                        Role = m.Role,
+                        Content = m.Content,
+                        Timestamp = m.Timestamp
+                    }).ToList(),
+                Recommendations = recommendations,
+                IsComplete = recommendations != null
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Database fetch failed in GetSessionAsync: {ex.Message}");
+            return null;
+        }
+    }
+
     public async Task<List<ChatSessionDto>> GetUserSessionsAsync(string userId)
     {
         if (string.IsNullOrEmpty(userId)) return new List<ChatSessionDto>();

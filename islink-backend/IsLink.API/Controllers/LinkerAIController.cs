@@ -153,6 +153,34 @@ public class LinkerAIController : ControllerBase
     }
 
     /// <summary>
+    /// Get details (messages) of a specific session
+    /// </summary>
+    [HttpGet("session/{sessionId}")]
+    public async Task<ActionResult<ChatSessionDetailDto>> GetSession(string sessionId)
+    {
+        try
+        {
+            var userId = GetCurrentUserId()?.ToString();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized();
+            }
+
+            var session = await _linkerAIService.GetSessionAsync(sessionId, userId);
+            if (session == null)
+            {
+                return NotFound(new { Success = false, Message = "Session not found" });
+            }
+
+            return Ok(new { Success = true, Data = session });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Success = false, Message = ex.Message });
+        }
+    }
+
+    /// <summary>
     /// Debug/status endpoint to verify Groq API is configured.
     /// </summary>
     [HttpGet("status")]
