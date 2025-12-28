@@ -81,4 +81,46 @@
   /* Gemini Specifics */
   --gemini-gradient: linear-gradient(135deg, #4285f4, #9b72cb, #d96570);
   --gemini-bg: #fdfdfd;
+
+  /* ========================================= */
+  /* RESTORED LEGACY VARIABLES (Required by Header/Footer) */
+  /* ========================================= */
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+
+  /* Layout Maps */
+  --container-max-width: var(--container-width);
+
+  /* Color Maps */
+  --bg-white: #ffffff;
+  --bg-soft: var(--neutral-100);
+  --border-color: var(--neutral-200);
+
+  /* Text Maps */
+  --text-light: var(--neutral-400);
+
+  /* Button Maps */
+  --primary-light: rgba(29, 191, 115, 0.2);
+  /* 20% opacity of primary */
+  --primary-dark: var(--primary-hover);
+
+  /* Footer Maps */
+  --bg-dark: var(--neutral-900);
+  --text-white: #ffffff;
+  --spacing-3xl: 4rem;
+
+  /* Typography Maps */
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-lg: 1.125rem;
+  --font-size-xl: 1.25rem;
+  --font-size-2xl: 1.5rem;
+  --font-size-3xl: 1.875rem;
 }
