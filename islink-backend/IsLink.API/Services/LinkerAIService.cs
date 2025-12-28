@@ -349,9 +349,27 @@ public class LinkerAIService : ILinkerAIService
         var lastMsg = chatSession.Messages.LastOrDefault(m => m.Role == "assistant");
         
         // Safety check if last message exists
+        // Safety check if last message exists
         if (lastMsg != null && CheckIfComplete(lastMsg.Content, chatSession.Messages))
         {
-            recommendations = await GenerateRecommendationsAsync(chatSession);
+            // If already computed, use it
+            if (!string.IsNullOrEmpty(chatSession.RecommendationsJson))
+            {
+                 try {
+                     recommendations = System.Text.Json.JsonSerializer.Deserialize<LinkerAIRecommendations>(chatSession.RecommendationsJson);
+                 } catch {}
+            }
+            
+            // If not, generate and save
+            if (recommendations == null)
+            {
+                recommendations = await GenerateRecommendationsAsync(chatSession);
+                if (recommendations != null)
+                {
+                    chatSession.RecommendationsJson = System.Text.Json.JsonSerializer.Serialize(recommendations);
+                    await _context.SaveChangesAsync();
+                }
+            }
         }
 
         return new LinkerAIChatResponse
@@ -375,11 +393,29 @@ public class LinkerAIService : ILinkerAIService
             if (session == null) return null;
 
             // Check for recommendations
+            // Check for recommendations
             LinkerAIRecommendations? recommendations = null;
-            var lastMsg = session.Messages.LastOrDefault(m => m.Role == "assistant");
-            if (lastMsg != null && CheckIfComplete(lastMsg.Content, session.Messages))
+            if (!string.IsNullOrEmpty(session.RecommendationsJson))
             {
-                recommendations = await GenerateRecommendationsAsync(session);
+                 try {
+                     recommendations = System.Text.Json.JsonSerializer.Deserialize<LinkerAIRecommendations>(session.RecommendationsJson);
+                 } catch {}
+            }
+            
+            // Fallback: If logic says complete but no JSON (legacy sessions), generate it
+            if (recommendations == null)
+            {
+                var lastMsg = session.Messages.LastOrDefault(m => m.Role == "assistant");
+                if (lastMsg != null && CheckIfComplete(lastMsg.Content, session.Messages))
+                {
+                    recommendations = await GenerateRecommendationsAsync(session);
+                    // Save for future
+                    if (recommendations != null) 
+                    {
+                        session.RecommendationsJson = System.Text.Json.JsonSerializer.Serialize(recommendations);
+                        await _context.SaveChangesAsync();
+                    }
+                }
             }
 
             return new ChatSessionDetailDto

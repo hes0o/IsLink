@@ -236,8 +236,7 @@ function LinkerAI() {
             <div className="message-avatar">
               {msg.role === 'assistant' ?
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" opacity="0" />
-                  {/* Replaced with a simple star/sparkle for AI */}
+                  {/* Assistant Icon */}
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-1 1-1-1-2.5-1 2.5-1 1-1 1 1 2.5 1-2.5 1zm5.5-5.5l-2.5 1 2.5 1 1 1 1-1 2.5-1-2.5-1-1-1-1 1z" />
                 </svg>
                 : '👤'}
@@ -262,6 +261,63 @@ function LinkerAI() {
             </div>
           </div>
         )}
+
+        {/* IN-STREAM RECOMMENDATIONS WIDGET */}
+        {recommendations && (
+          <div className="message assistant" style={{ marginTop: '1rem' }}>
+            <div className="message-avatar">✨</div>
+            <div className="message-content rec-message-container">
+              <div className="rec-header">
+                <h3>Recommended Plan</h3>
+                <p style={{ color: '#64748b' }}>{safeGet(safeGet(recommendations, 'projectSummary'), 'description')}</p>
+
+                <div className="rec-metrics">
+                  <div className="rec-metric-item">
+                    <span className="rec-metric-label">Project Type</span>
+                    <span className="rec-metric-value">{safeGet(safeGet(recommendations, 'projectSummary'), 'projectType')}</span>
+                  </div>
+                  <div className="rec-metric-item">
+                    <span className="rec-metric-label">Budget</span>
+                    <span className="rec-metric-value">${safeFixed(safeGet(safeGet(recommendations, 'budget'), 'totalBudget'))}</span>
+                  </div>
+                  <div className="rec-metric-item">
+                    <span className="rec-metric-label">Remaining</span>
+                    <span className="rec-metric-value" style={{ color: safeGet(safeGet(recommendations, 'budget'), 'remaining') >= 0 ? 'var(--neutral-800)' : 'var(--error)' }}>
+                      ${safeFixed(safeGet(safeGet(recommendations, 'budget'), 'remaining'))}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <h4 style={{ marginBottom: '1rem', color: 'var(--neutral-700)' }}>Suggested Services</h4>
+              <div className="rec-services-grid">
+                {(safeGet(recommendations, 'services') || []).map((service) => (
+                  <Link key={safeGet(service, 'gigId')} to={`/gig/${safeGet(service, 'slug')}`} className="rec-service-card">
+                    {safeGet(service, 'imageUrl') && (
+                      <img
+                        src={getImageUrl(safeGet(service, 'imageUrl'))}
+                        alt={safeGet(service, 'title')}
+                        className="rec-service-img"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://placehold.co/600x400?text=Service';
+                        }}
+                      />
+                    )}
+                    <div className="rec-service-content">
+                      <div className="rec-service-title">{safeGet(service, 'title')}</div>
+                      <div className="rec-service-meta">
+                        <span className="rec-price">${safeFixed(safeGet(service, 'price'))}</span>
+                        <span className="rec-rating">★ {safeFixed(safeGet(service, 'rating'), 1)}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
       </div>
     );
@@ -342,72 +398,11 @@ function LinkerAI() {
           </div>
         </div>
       </div>
-
-      {/* 3. Right Panel: Recommendations (Conditional) */}
-      {recommendations && (
-        <div className="linkerai-recommendations">
-          <h2>Recommendations</h2>
-
-          {/* Project Summary */}
-          <div className="rec-card">
-            <h3>Project Summary</h3>
-            <div className="project-summary">
-              <p><strong>Type:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'projectType')}</p>
-              {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName') && (
-                <p><strong>Brand:</strong> {getRecProp(getRecProp(recommendations, 'projectSummary'), 'brandName')}</p>
-              )}
-              <p style={{ fontSize: '0.9rem' }}>{getRecProp(getRecProp(recommendations, 'projectSummary'), 'description')}</p>
-            </div>
-          </div>
-
-          {/* Budget */}
-          <div className="rec-card">
-            <h3>Budget Analysis</h3>
-            <div className="budget-breakdown">
-              <div className="budget-item">
-                <span>Total:</span>
-                <strong>${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'totalBudget'))}</strong>
-              </div>
-              <div className="budget-item highlight">
-                <span>Rem:</span>
-                <strong className={getRecProp(getRecProp(recommendations, 'budget'), 'remaining') >= 0 ? 'positive' : 'negative'}>
-                  ${safeFixed(getRecProp(getRecProp(recommendations, 'budget'), 'remaining'))}
-                </strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Recommended Services */}
-          <div className="rec-card">
-            <h3>Services</h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              {(getRecProp(recommendations, 'services') || []).map((service) => (
-                <Link key={getRecProp(service, 'gigId')} to={`/gig/${getRecProp(service, 'slug')}`} className="recommended-service-card">
-                  {getRecProp(service, 'imageUrl') && (
-                    <img
-                      src={getImageUrl(getRecProp(service, 'imageUrl'))}
-                      alt={getRecProp(service, 'title')}
-                      className="service-image"
-                      onError={(e) => {
-                        e.target.onerror = null; // Prevent infinite loop
-                        e.target.src = 'https://placehold.co/600x400?text=Service'; // Reliable fallback
-                      }}
-                    />
-                  )}
-                  <div className="service-info">
-                    <h4>{getRecProp(service, 'title')}</h4>
-                    <div className="service-price">${safeFixed(getRecProp(service, 'price'))}</div>
-                    <div className="service-rating">⭐ {safeFixed(getRecProp(service, 'rating'), 1)}</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Sidebar Removed */}
     </div>
   );
 }
+
 
 function LinkerAIWrapper() {
   return (

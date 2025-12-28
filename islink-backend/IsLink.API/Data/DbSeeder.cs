@@ -11,6 +11,7 @@ public static class DbSeeder
         
         // Clear existing data to ensure fresh seed
         Console.WriteLine("🧹 Clearing existing seed data...");
+        Console.WriteLine("!!! FORCE SEEDING ACTIVE - WIPING DATA !!!");
 
         // FIX: Ensure ChatSessions has Title column (Migration workaround for existing DBs)
         try 
@@ -21,10 +22,11 @@ public static class DbSeeder
                 BEGIN 
                     IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'ChatSessions') THEN
                         ALTER TABLE ""ChatSessions"" ADD COLUMN IF NOT EXISTS ""Title"" text DEFAULT 'New Chat';
+                        ALTER TABLE ""ChatSessions"" ADD COLUMN IF NOT EXISTS ""RecommendationsJson"" text;
                     END IF;
                 END $$;
             ");
-            Console.WriteLine("✅ Schema updated: Added Title to ChatSessions");
+            Console.WriteLine("✅ Schema updated: Added Title & RecommendationsJson to ChatSessions");
         }
         catch (Exception ex)
         {

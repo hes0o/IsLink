@@ -23,6 +23,11 @@ public class ChatSession
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Stores the final recommendations as a JSON string when the session is complete.
+    /// </summary>
+    public string? RecommendationsJson { get; set; }
+
     // Navigation property
     public List<ChatMessage> Messages { get; set; } = new();
 }

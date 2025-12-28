@@ -178,6 +178,7 @@
   display: flex;
   flex-direction: column;
   gap: 2rem;
+  scroll-behavior: smooth;
 }
 
 /* Messages - Gemini Style */
@@ -438,6 +439,13 @@
   border-left: 1px solid var(--neutral-200);
   background-color: var(--neutral-50);
   padding: 1.5rem;
+  overflow-y: auto;
+  /* Enable scrolling */
+  height: 100%;
+  /* Fill parent height */
+  flex-shrink: 0;
+  /* Prevent shrinking */
+  scroll-behavior: smooth;
 }
 
 .rec-card {
