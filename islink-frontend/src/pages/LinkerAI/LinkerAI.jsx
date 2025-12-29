@@ -292,39 +292,33 @@ function LinkerAI() {
               <h4 style={{ marginBottom: '1rem', color: 'var(--neutral-700)' }}>Suggested Services</h4>
               <div className="rec-services-grid">
                 {(safeGet(recommendations, 'services') || []).map((service) => (
-                  <div className="rec-flip-card" key={safeGet(service, 'gigId')}>
-                    <div className="rec-card-inner">
-                      {/* FRONT FACE */}
-                      <div className="rec-card-front">
-                        {safeGet(service, 'imageUrl') ? (
-                          <img
-                            src={getImageUrl(safeGet(service, 'imageUrl'))}
-                            alt={safeGet(service, 'title')}
-                            className="rec-front-img"
-                            onError={(e) => {
-                              e.target.onerror = null;
-                              e.target.src = 'https://placehold.co/600x400?text=Service';
-                            }}
-                          />
-                        ) : (
-                          <div style={{ width: '100%', height: '100%', backgroundColor: '#eee' }}></div>
-                        )}
-                        <div className="rec-front-overlay">
-                          <div className="rec-front-title">{safeGet(service, 'title')}</div>
-                        </div>
-                      </div>
+                  <div className="rec-cinematic-card" key={safeGet(service, 'gigId')}>
+                    {safeGet(service, 'imageUrl') ? (
+                      <img
+                        src={getImageUrl(safeGet(service, 'imageUrl'))}
+                        alt={safeGet(service, 'title')}
+                        className="rec-cine-img"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = 'https://placehold.co/600x400?text=Service';
+                        }}
+                      />
+                    ) : (
+                      <div className="rec-cine-img" style={{ backgroundColor: '#1a1a1a' }}></div>
+                    )}
 
-                      {/* BACK FACE */}
-                      <div className="rec-card-back">
-                        <div className="rec-back-price">${safeFixed(safeGet(service, 'price'))}</div>
-                        <div className="rec-back-rating">
-                          <span style={{ color: 'gold', fontSize: '1.5rem' }}>★</span>
-                          {safeFixed(safeGet(service, 'rating'), 1)}
+                    <div className="rec-cine-overlay">
+                      <div className="rec-cine-title">{safeGet(service, 'title')}</div>
+
+                      <div className="rec-cine-details">
+                        <div className="rec-cine-metrics">
+                          <span className="rec-cine-price">${safeFixed(safeGet(service, 'price'))}</span>
+                          <span className="rec-cine-rating">
+                            <span style={{ color: '#facc15', fontSize: '1.2rem' }}>★</span>
+                            {safeFixed(safeGet(service, 'rating'), 1)}
+                          </span>
                         </div>
-                        <div style={{ fontSize: '0.9rem', color: '#666', marginTop: '0.5rem' }}>
-                          {safeGet(service, 'sellerName') || 'Top Seller'}
-                        </div>
-                        <Link to={`/gig/${safeGet(service, 'slug')}`} className="rec-back-btn">
+                        <Link to={`/gig/${safeGet(service, 'slug')}`} className="rec-cine-btn">
                           View Details
                         </Link>
                       </div>

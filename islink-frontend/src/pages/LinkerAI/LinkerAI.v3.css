@@ -475,178 +475,180 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--neutral-400);
-}/* In-Stream Recommendations Grid & Flip Cards */
+}
+
+/* In-Stream Recommendations Grid & Flip Cards */
 .rec-message-container {
-    width: 100%;
-    max-width: 100%;
-    animation: fadeIn 0.4s ease-out;
+  width: 100%;
+  max-width: 100%;
+  animation: fadeIn 0.4s ease-out;
 }
 
 .rec-header {
-    margin-bottom: 2rem;
-    background: white;
-    padding: 1.5rem;
-    border-radius: var(--radius-lg);
-    border: 1px solid var(--neutral-200);
+  margin-bottom: 2rem;
+  background: white;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--neutral-200);
 }
 
 .rec-header h3 {
-    font-size: 1.25rem;
-    color: var(--neutral-900);
-    margin-bottom: 0.5rem;
-    font-family: var(--font-heading);
+  font-size: 1.25rem;
+  color: var(--neutral-900);
+  margin-bottom: 0.5rem;
+  font-family: var(--font-heading);
 }
 
 .rec-metrics {
-    display: flex;
-    gap: 2rem;
-    margin-top: 1rem;
-    padding-top: 1rem;
-    border-top: 1px solid var(--neutral-100);
+  display: flex;
+  gap: 2rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--neutral-100);
 }
 
 .rec-metric-item {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .rec-metric-label {
-    font-size: 0.8rem;
-    color: var(--neutral-500);
-    text-transform: uppercase;
-    font-weight: 600;
+  font-size: 0.8rem;
+  color: var(--neutral-500);
+  text-transform: uppercase;
+  font-weight: 600;
 }
 
 .rec-metric-value {
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: var(--neutral-800);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--neutral-800);
 }
 
+/* Cinematic Reveal Card Styles */
 .rec-services-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1.5rem;
-    margin-top: 1.5rem;
-    padding-bottom: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  padding-bottom: 1rem;
 }
 
-/* FLIP CARD STYLES */
-.rec-flip-card {
-    background-color: transparent;
-    perspective: 1000px;
-    height: 280px;
-    /* Fixed height for uniformity */
-    cursor: pointer;
+.rec-cinematic-card {
+  position: relative;
+  height: 320px;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  background-color: var(--neutral-900);
 }
 
-.rec-card-inner {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    text-align: center;
-    transition: transform 0.6s;
-    transform-style: preserve-3d;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.1);
-    border-radius: var(--radius-lg);
+.rec-cinematic-card:hover {
+  box-shadow: var(--shadow-xl);
+  transform: translateY(-4px);
 }
 
-.rec-flip-card:hover .rec-card-inner {
-    transform: rotateY(180deg);
+/* Background Image - Zooms In */
+.rec-cine-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.6s cubic-bezier(0.25, 0.8, 0.25, 1);
+  opacity: 0.9;
 }
 
-.rec-card-front,
-.rec-card-back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+.rec-cinematic-card:hover .rec-cine-img {
+  transform: scale(1.1);
+  opacity: 0.6;
 }
 
-/* Front Face */
-.rec-card-front {
-    background-color: white;
-    border: 1px solid var(--neutral-200);
+/* Gradient Overlay */
+.rec-cine-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70%;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95) 10%, rgba(0, 0, 0, 0.7) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.5rem;
+  z-index: 2;
+  transition: height 0.4s ease;
 }
 
-.rec-front-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.5s ease;
+.rec-cinematic-card:hover .rec-cine-overlay {
+  height: 85%;
 }
 
-.rec-flip-card:hover .rec-front-img {
-    transform: scale(1.1);
+/* Content Area */
+.rec-cine-title {
+  color: white;
+  font-size: 1.1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  font-family: var(--font-heading);
 }
 
-.rec-front-overlay {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
-    padding: 2rem 1rem 1rem;
-    color: white;
-    text-align: left;
+/* Hidden Details - Slide Up */
+.rec-cine-details {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-.rec-front-title {
-    font-weight: 600;
-    font-size: 1rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+.rec-cinematic-card:hover .rec-cine-details {
+  max-height: 150px;
+  opacity: 1;
+  transform: translateY(0);
+  margin-top: 0.75rem;
 }
 
-/* Back Face */
-.rec-card-back {
-    background-color: white;
-    color: var(--neutral-800);
-    transform: rotateY(180deg);
-    border: 1px solid var(--primary-color);
-    padding: 1.5rem;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    gap: 1rem;
-    box-shadow: var(--shadow-md);
+/* Metrics Row */
+.rec-cine-metrics {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  padding-top: 0.75rem;
 }
 
-.rec-back-price {
-    font-size: 1.8rem;
-    font-weight: 800;
-    color: var(--primary-color);
+.rec-cine-price {
+  color: #4ade80;
+  font-weight: 700;
+  font-size: 1.25rem;
 }
 
-.rec-back-rating {
-    font-size: 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    color: var(--warning);
+.rec-cine-rating {
+  color: #facc15;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
 }
 
-.rec-back-btn {
-    margin-top: auto;
-    background-color: var(--neutral-900);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: var(--radius-full);
-    text-decoration: none;
-    font-weight: 500;
-    transition: background-color 0.2s;
-    width: 80%;
+/* Action Button */
+.rec-cine-btn {
+  display: block;
+  width: 100%;
+  text-align: center;
+  background-color: white;
+  color: black;
+  font-weight: 600;
+  padding: 0.75rem;
+  border-radius: var(--radius-full);
+  text-decoration: none;
+  transition: background-color 0.2s;
 }
 
-.rec-back-btn:hover {
-    background-color: black;
-    transform: translateY(-2px);
+.rec-cine-btn:hover {
+  background-color: var(--primary-light);
 }
