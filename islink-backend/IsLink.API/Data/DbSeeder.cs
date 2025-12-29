@@ -1389,7 +1389,7 @@ public static class DbSeeder
                 var order = new Order
                 {
                     Id = Guid.NewGuid(),
-                    OrderNumber = $"ORD-{DateTime.UtcNow.Ticks}-{Random.Shared.Next(1000)}",
+                    OrderNumber = $"ORD-{Random.Shared.Next(10000000, 99999999)}", // 8 digits, total 12 chars < 20
                     GigId = gig.Id,
                     BuyerId = buyerId,
                     SellerId = gig.SellerId,
