@@ -45,4 +45,3 @@ public class LastMessageInfo
     [BsonElement("timestamp")]
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 }
-

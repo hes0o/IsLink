@@ -33,4 +33,3 @@ public class Notification
     [BsonElement("createdAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
-

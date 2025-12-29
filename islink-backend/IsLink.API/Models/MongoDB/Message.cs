@@ -66,4 +66,3 @@ public class CustomOffer
     [BsonElement("status")]
     public string Status { get; set; } = "pending"; // pending, accepted, declined, expired
 }
-
