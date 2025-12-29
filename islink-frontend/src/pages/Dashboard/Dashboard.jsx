@@ -27,12 +27,12 @@ function Dashboard() {
   const loadDashboardData = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       // Fetch orders - backend returns { success: true, data: [...] }
       const ordersResponse = await ordersAPI.getAll({ role: user?.role === 'seller' ? 'seller' : 'buyer' });
       const ordersList = ordersResponse?.Data || ordersResponse?.data || [];
-      
+
       // Transform orders for display
       const formattedOrders = ordersList.map(order => ({
         id: order.id || order.Id,
@@ -44,11 +44,11 @@ function Dashboard() {
         price: order.totalPrice || order.TotalPrice || 0,
         dueDate: order.deliveryDeadline ? new Date(order.deliveryDeadline).toLocaleDateString() : 'N/A'
       }));
-      
+
       setOrders(formattedOrders);
 
       // Calculate stats from orders
-      const activeOrders = formattedOrders.filter(o => 
+      const activeOrders = formattedOrders.filter(o =>
         o.status === 'pending' || o.status === 'in_progress'
       ).length;
       const completedOrders = formattedOrders.filter(o => o.status === 'completed').length;
@@ -78,7 +78,7 @@ function Dashboard() {
         totalGigs: 3
       });
     }
-    
+
     // Fetch user's gigs if seller
     if (user?.role === 'seller') {
       try {
@@ -91,7 +91,7 @@ function Dashboard() {
         setMyGigs([]);
       }
     }
-    
+
     setIsLoading(false);
   };
 
@@ -124,8 +124,8 @@ function Dashboard() {
         {/* Sidebar */}
         <aside className="dashboard-sidebar">
           <div className="user-info">
-            <img 
-              src={user?.avatarUrl || 'https://via.placeholder.com/80?text=U'} 
+            <img
+              src={user?.avatarUrl || 'https://via.placeholder.com/80?text=U'}
               alt={user?.username || 'User'}
               className="user-avatar"
             />
@@ -133,48 +133,48 @@ function Dashboard() {
             <p>@{user?.username || 'demo'}</p>
             <span className="user-level">Level 2 Seller</span>
           </div>
-          
+
           <nav className="dashboard-nav">
-            <button 
+            <button
               className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
               onClick={() => setActiveTab('overview')}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
+                <rect x="3" y="3" width="7" height="7" />
+                <rect x="14" y="3" width="7" height="7" />
+                <rect x="14" y="14" width="7" height="7" />
+                <rect x="3" y="14" width="7" height="7" />
               </svg>
               Overview
             </button>
-            <button 
+            <button
               className={`nav-item ${activeTab === 'orders' ? 'active' : ''}`}
               onClick={() => setActiveTab('orders')}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-                <rect x="9" y="3" width="6" height="4" rx="2"/>
-                <line x1="9" y1="12" x2="15" y2="12"/>
-                <line x1="9" y1="16" x2="15" y2="16"/>
+                <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" />
+                <rect x="9" y="3" width="6" height="4" rx="2" />
+                <line x1="9" y1="12" x2="15" y2="12" />
+                <line x1="9" y1="16" x2="15" y2="16" />
               </svg>
               Orders
             </button>
-            <button 
+            <button
               className={`nav-item ${activeTab === 'gigs' ? 'active' : ''}`}
               onClick={() => setActiveTab('gigs')}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
               </svg>
               My Gigs
             </button>
-            <button 
+            <button
               className={`nav-item ${activeTab === 'earnings' ? 'active' : ''}`}
               onClick={() => setActiveTab('earnings')}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <line x1="12" y1="1" x2="12" y2="23"/>
-                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                <line x1="12" y1="1" x2="12" y2="23" />
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
               </svg>
               Earnings
             </button>
@@ -186,14 +186,14 @@ function Dashboard() {
           {activeTab === 'overview' && (
             <>
               <h1>Welcome back, {user?.fullName?.split(' ')[0] || 'User'}! 👋</h1>
-              
+
               {/* Stats Cards */}
               <div className="stats-grid">
                 <div className="stat-card">
                   <div className="stat-icon earnings">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                      <line x1="12" y1="1" x2="12" y2="23" />
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                     </svg>
                   </div>
                   <div className="stat-info">
@@ -201,12 +201,12 @@ function Dashboard() {
                     <p>Total Earnings</p>
                   </div>
                 </div>
-                
+
                 <div className="stat-card">
                   <div className="stat-icon orders">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <polyline points="12 6 12 12 16 14"/>
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
                     </svg>
                   </div>
                   <div className="stat-info">
@@ -214,12 +214,12 @@ function Dashboard() {
                     <p>Active Orders</p>
                   </div>
                 </div>
-                
+
                 <div className="stat-card">
                   <div className="stat-icon completed">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                      <polyline points="22 4 12 14.01 9 11.01"/>
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                      <polyline points="22 4 12 14.01 9 11.01" />
                     </svg>
                   </div>
                   <div className="stat-info">
@@ -227,12 +227,12 @@ function Dashboard() {
                     <p>Completed</p>
                   </div>
                 </div>
-                
+
                 <div className="stat-card">
                   <div className="stat-icon gigs">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                      <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                     </svg>
                   </div>
                   <div className="stat-info">
@@ -248,7 +248,7 @@ function Dashboard() {
                   <h2>Recent Orders</h2>
                   <button onClick={() => setActiveTab('orders')}>View All</button>
                 </div>
-                
+
                 {isLoading ? (
                   <div className="loading">Loading...</div>
                 ) : (
@@ -323,7 +323,7 @@ function Dashboard() {
                 <h1>My Gigs</h1>
                 <Link to="/gigs/create" className="btn-primary">+ Create New Gig</Link>
               </div>
-              
+
               {myGigs.length === 0 ? (
                 <div className="empty-state">
                   <p>You haven't created any gigs yet.</p>
@@ -332,17 +332,20 @@ function Dashboard() {
               ) : (
                 <div className="gigs-grid">
                   {myGigs.map(gig => {
-                    const gigImage = gig.images?.[0]?.imageUrl || gig.Images?.[0]?.ImageUrl || 'https://via.placeholder.com/300x200';
-                    const basicPackage = gig.packages?.find(p => p.packageType === 'basic') || gig.Packages?.find(p => p.PackageType === 'basic');
-                    const price = basicPackage?.price || basicPackage?.Price || 25;
-                    
+                    const gigImage = (gig.images && gig.images[0]) || (gig.Images && gig.Images[0]) || 'https://via.placeholder.com/300x200';
+                    // Backend DTO returns packages as an OBJECT { basic, standard, premium }, not an array
+                    const pkgs = gig.packages || gig.Packages || {};
+                    const basicPkg = pkgs.basic || pkgs.Basic || {};
+                    const price = basicPkg.price || basicPkg.Price || 0;
+
                     return (
                       <div key={gig.id || gig.Id} className="gig-card-mini">
-                        <img src={gigImage} alt={gig.title || gig.Title} />
+                        <img src={gigImage.startsWith('http') ? gigImage : `http://localhost:5001${gigImage}`} alt={gig.title || gig.Title}
+                          onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/300x200?text=Gig'; }} />
                         <div className="gig-card-content">
                           <h3>{gig.title || gig.Title}</h3>
                           <div className="gig-stats">
-                            <span>⭐ {gig.rating || gig.Rating || 5.0}</span>
+                            <span>⭐ {parseFloat(gig.rating || gig.Rating || 0).toFixed(1)}</span>
                             <span>📦 {gig.ordersInQueue || gig.OrdersInQueue || 0} in queue</span>
                           </div>
                           <p className="gig-price">From ${price}</p>
