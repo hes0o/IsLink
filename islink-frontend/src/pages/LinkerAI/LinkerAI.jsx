@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context';
 import { linkerAIAPI } from '../../services/api';
 import ErrorBoundary from '../../components/common/ErrorBoundary';
 import './LinkerAI.v3.css';
@@ -24,10 +25,15 @@ function LinkerAI() {
     { label: "Design a logo", prompt: "I need a professional logo design for a tech startup." }
   ];
 
+  const { isAuthenticated, user } = useAuth(); // Importing useAuth
+
   useEffect(() => {
-    // Only load history on mount. 
-    loadHistory();
-  }, []);
+    if (isAuthenticated) {
+      loadHistory();
+    } else {
+      setHistory([]);
+    }
+  }, [isAuthenticated, user?.username]); // Reload when auth changes
 
   useEffect(() => {
     if (messages.length > 0) {
