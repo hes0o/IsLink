@@ -281,77 +281,79 @@ function GigDetails() {
       </div>
 
       {/* Contact Modal (Simplified) */}
-      <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
-        <div className="modal" onClick={e => e.stopPropagation()}>
-          <button className="modal-close" onClick={() => setShowContactModal(false)}>×</button>
-          {isAuthenticated ? (
-            <>
-              <h3>Contact {gig.seller?.username}</h3>
-              <textarea
-                placeholder="Hi! I'm interested in your service..."
-                rows={5}
-                value={contactMessage}
-                onChange={(e) => setContactMessage(e.target.value)}
-                className="modal-textarea"
-              ></textarea>
-              <div className="modal-actions">
-                <button
-                  className="btn-primary"
-                  onClick={async () => {
-                    try {
-                      // 1. Get or Create Conversation
-                      // The gig object has seller object, check for ID
-                      const participantId = gig.seller?.id || gig.seller?.Id;
-                      if (!participantId) {
-                        alert("Error: Cannot contact seller (Missing ID)");
-                        return;
+      {showContactModal && (
+        <div className="modal-overlay" onClick={() => setShowContactModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setShowContactModal(false)}>×</button>
+            {isAuthenticated ? (
+              <>
+                <h3>Contact {gig.seller?.username}</h3>
+                <textarea
+                  placeholder="Hi! I'm interested in your service..."
+                  rows={5}
+                  value={contactMessage}
+                  onChange={(e) => setContactMessage(e.target.value)}
+                  className="modal-textarea"
+                ></textarea>
+                <div className="modal-actions">
+                  <button
+                    className="btn-primary"
+                    onClick={async () => {
+                      try {
+                        // 1. Get or Create Conversation
+                        // The gig object has seller object, check for ID
+                        const participantId = gig.seller?.id || gig.seller?.Id;
+                        if (!participantId) {
+                          alert("Error: Cannot contact seller (Missing ID)");
+                          return;
+                        }
+
+                        const convResponse = await messagesAPI.getOrCreateConversation({
+                          participantId: participantId,
+                          relatedGig: gig.id
+                        });
+
+                        const conversationData = convResponse?.data || convResponse?.Data || convResponse;
+                        const conversationId = conversationData?.id || conversationData?.Id;
+
+                        if (!conversationId) {
+                          throw new Error("Failed to start conversation");
+                        }
+
+                        // 2. Send Message
+                        await messagesAPI.sendMessage(conversationId, {
+                          content: contactMessage,
+                          messageType: 'text'
+                        });
+
+                        setShowContactModal(false);
+                        setContactMessage('');
+                        navigate(`/messages/${conversationId}`);
+                      } catch (err) {
+                        console.error("Failed to send message:", err);
+                        alert(`Error: ${err.message || "Failed to send message"}`);
                       }
-
-                      const convResponse = await messagesAPI.getOrCreateConversation({
-                        participantId: participantId,
-                        relatedGig: gig.id
-                      });
-
-                      const conversationData = convResponse?.data || convResponse?.Data || convResponse;
-                      const conversationId = conversationData?.id || conversationData?.Id;
-
-                      if (!conversationId) {
-                        throw new Error("Failed to start conversation");
-                      }
-
-                      // 2. Send Message
-                      await messagesAPI.sendMessage(conversationId, {
-                        content: contactMessage,
-                        messageType: 'text'
-                      });
-
-                      setShowContactModal(false);
-                      setContactMessage('');
-                      navigate(`/messages/${conversationId}`);
-                    } catch (err) {
-                      console.error("Failed to send message:", err);
-                      alert(`Error: ${err.message || "Failed to send message"}`);
-                    }
-                  }}
-                  disabled={!contactMessage.trim()}
-                >
-                  Send Message
-                </button>
-                <button className="btn-secondary" onClick={() => setShowContactModal(false)}>Cancel</button>
-              </div>
-            </>
-          ) : (
-            <>
-              <h3>Please Log In</h3>
-              <p>You need to be logged in to contact sellers.</p>
-              <div className="modal-actions">
-                <Link to="/auth/login" state={{ from: `/gig/${slug}` }} className="btn-primary">Sign In</Link>
-                <button className="btn-secondary" onClick={() => setShowContactModal(false)}>Cancel</button>
-              </div>
-            </>
-          )}
+                    }}
+                    disabled={!contactMessage.trim()}
+                  >
+                    Send Message
+                  </button>
+                  <button className="btn-secondary" onClick={() => setShowContactModal(false)}>Cancel</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3>Please Log In</h3>
+                <p>You need to be logged in to contact sellers.</p>
+                <div className="modal-actions">
+                  <Link to="/auth/login" state={{ from: `/gig/${slug}` }} className="btn-primary">Sign In</Link>
+                  <button className="btn-secondary" onClick={() => setShowContactModal(false)}>Cancel</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
