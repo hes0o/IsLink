@@ -62,16 +62,18 @@ export function AuthProvider({ children }) {
     }
   };
 
-  const logout = async () => {
-    try {
-      await authAPI.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('token');
-      setUser(null);
-      setIsAuthenticated(false);
-    }
+  const logout = () => {
+    // 1. Clear local storage and state immediately (Optimistic UI)
+    localStorage.removeItem('token');
+    setUser(null);
+    setIsAuthenticated(false);
+
+    // 2. Best-effort API call to server (Fire and forget, don't wait)
+    // accessible via AuthContext, but we don't want to block the UI
+    authAPI.logout().catch(error => {
+      console.error('Logout API warning:', error);
+      // Suppress error - user is already logged out locally
+    });
   };
 
   const updateUser = (userData) => {
