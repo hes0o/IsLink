@@ -307,7 +307,7 @@ function Dashboard() {
                         <td>${order.price}</td>
                         <td>{order.dueDate}</td>
                         <td>
-                          <button className="btn-small">View</button>
+                          <Link to="/coming-soon?page=Order+Details" className="btn-small">View</Link>
                         </td>
                       </tr>
                     ))}

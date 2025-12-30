@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import Messages from './pages/Messages';
 import LinkerAI from './pages/LinkerAI';
 import NotFound from './pages/NotFound';
+import ComingSoon from './pages/ComingSoon/ComingSoon';
 import './styles/variables.css';
 import './App.css';
 
@@ -75,6 +76,9 @@ function App() {
       {/* Auth Routes (No Layout - Full Page) */}
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<Register />} />
+
+      {/* Utility Routes */}
+      <Route path="/coming-soon" element={<ComingSoon />} />
 
       {/* 404 Route */}
       <Route path="*" element={<NotFound />} />

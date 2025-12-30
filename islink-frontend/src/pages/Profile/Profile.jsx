@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context';
-import { usersAPI, gigsAPI, reviewsAPI } from '../../services/api';
+import { usersAPI, gigsAPI, reviewsAPI, messagesAPI } from '../../services/api';
 import GigCard from '../../components/gig/GigCard';
 import './Profile.css';
 
@@ -100,8 +100,8 @@ function Profile() {
               {/* Avatar & Basic Info */}
               <div className="profile-header">
                 <div className="avatar-container">
-                  <img 
-                    src={user.avatarUrl || user.AvatarUrl || 'https://via.placeholder.com/120?text=U'} 
+                  <img
+                    src={user.avatarUrl || user.AvatarUrl || 'https://via.placeholder.com/120?text=U'}
                     alt={user.fullName || user.FullName}
                     className="profile-avatar"
                     onError={(e) => {
@@ -112,7 +112,7 @@ function Profile() {
                 </div>
                 <h1 className="profile-name">{user.fullName || user.FullName}</h1>
                 <p className="profile-username">@{user.username || user.Username}</p>
-                
+
                 {/* Rating */}
                 <div className="profile-rating">
                   <span className="star">★</span>
@@ -133,7 +133,7 @@ function Profile() {
 
               {/* Actions */}
               <div className="profile-actions">
-                <button 
+                <button
                   className="btn-contact-profile"
                   onClick={() => setShowContactModal(true)}
                 >
@@ -151,9 +151,9 @@ function Profile() {
                   <div className="info-item">
                     <span className="info-label">Member since</span>
                     <span className="info-value">
-                      {new Date(user.memberSince || user.MemberSince).toLocaleDateString('en-US', { 
-                        month: 'short', 
-                        year: 'numeric' 
+                      {new Date(user.memberSince || user.MemberSince).toLocaleDateString('en-US', {
+                        month: 'short',
+                        year: 'numeric'
                       })}
                     </span>
                   </div>
@@ -219,13 +219,13 @@ function Profile() {
           <main className="profile-main">
             {/* Tabs */}
             <div className="profile-tabs">
-              <button 
+              <button
                 className={`tab ${activeTab === 'gigs' ? 'active' : ''}`}
                 onClick={() => setActiveTab('gigs')}
               >
                 Gigs ({userGigs.length})
               </button>
-              <button 
+              <button
                 className={`tab ${activeTab === 'reviews' ? 'active' : ''}`}
                 onClick={() => setActiveTab('reviews')}
               >
@@ -291,8 +291,8 @@ function Profile() {
                         return (
                           <div key={review.id || review.Id || idx} className="review-item">
                             <div className="review-header">
-                              <img 
-                                src={buyer.avatarUrl || buyer.AvatarUrl || 'https://via.placeholder.com/40?text=U'} 
+                              <img
+                                src={buyer.avatarUrl || buyer.AvatarUrl || 'https://via.placeholder.com/40?text=U'}
                                 alt={buyer.fullName || buyer.FullName || buyer.username || buyer.Username || 'Buyer'}
                                 className="reviewer-avatar"
                                 onError={(e) => {
@@ -350,19 +350,50 @@ function Profile() {
             {isAuthenticated ? (
               <>
                 <h3>Contact {user.username || user.Username}</h3>
-                <textarea 
+                <textarea
                   placeholder="Hi! I would like to discuss a project with you..."
                   rows={5}
                   value={contactMessage}
                   onChange={(e) => setContactMessage(e.target.value)}
                 ></textarea>
-                <button 
+                <button
                   className="btn-send"
-                  onClick={() => {
-                    alert('Message sent! (This will work when the database is connected)');
-                    setShowContactModal(false);
-                    setContactMessage('');
-                    navigate('/messages');
+                  onClick={async () => {
+                    try {
+                      // 1. Get or Create Conversation
+                      const participantId = user.id || user.Id;
+                      if (!participantId) {
+                        alert("Error: Cannot contact user (Missing ID)");
+                        return;
+                      }
+
+                      const convResponse = await messagesAPI.getOrCreateConversation({
+                        participantId: participantId
+                      });
+
+                      const conversationData = convResponse?.data || convResponse?.Data || convResponse;
+                      const conversationId = conversationData?.id || conversationData?.Id;
+
+                      if (!conversationId) {
+                        throw new Error("Failed to start conversation");
+                      }
+
+                      // 2. Send Message
+                      await messagesAPI.sendMessage(conversationId, {
+                        content: contactMessage,
+                        messageType: 'text'
+                      });
+
+                      setShowContactModal(false);
+                      setContactMessage('');
+
+                      // 3. Navigate to messages
+                      navigate(`/messages/${conversationId}`);
+                    } catch (err) {
+                      console.error("Failed to send message:", err);
+                      const errMsg = err.response?.data?.message || err.message || "Failed to send message";
+                      alert(`Error: ${errMsg}`);
+                    }
                   }}
                   disabled={!contactMessage.trim()}
                 >
