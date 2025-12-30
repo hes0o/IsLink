@@ -53,17 +53,34 @@ function Messages() {
   };
 
   const loadMessages = (conversationId) => {
-    const mockMessages = [
-      { id: '1', senderId: 'other', content: 'Hi! I saw your gig and I\'m interested.', createdAt: new Date(Date.now() - 7200000).toISOString() },
-      { id: '2', senderId: 'me', content: 'Hello! Thank you for reaching out. What do you need?', createdAt: new Date(Date.now() - 7000000).toISOString() },
-      { id: '3', senderId: 'other', content: 'I need a logo for my startup company.', createdAt: new Date(Date.now() - 6800000).toISOString() },
-      { id: '4', senderId: 'me', content: 'Sure! Can you tell me more about your company and what style you\'re looking for?', createdAt: new Date(Date.now() - 6600000).toISOString() },
-      { id: '5', senderId: 'other', content: 'It\'s a tech company called "TechFlow". I want something modern and clean.', createdAt: new Date(Date.now() - 6400000).toISOString() },
-      { id: '6', senderId: 'me', content: 'Great! I can definitely help with that. I\'ll prepare some concepts for you.', createdAt: new Date(Date.now() - 3600000).toISOString() },
-      { id: '7', senderId: 'other', content: 'Thanks for the great work!', createdAt: new Date().toISOString() },
-    ];
+    // Mock messages for different conversations
+    const allMockMessages = {
+      '1': [
+        { id: '1', senderId: 'other', content: 'Hi! I saw your gig and I\'m interested.', createdAt: new Date(Date.now() - 7200000).toISOString() },
+        { id: '2', senderId: 'me', content: 'Hello! Thank you for reaching out. What do you need?', createdAt: new Date(Date.now() - 7000000).toISOString() },
+        { id: '3', senderId: 'other', content: 'I need a logo for my startup company.', createdAt: new Date(Date.now() - 6800000).toISOString() },
+        { id: '4', senderId: 'me', content: 'Sure! Can you tell me more about your company and what style you\'re looking for?', createdAt: new Date(Date.now() - 6600000).toISOString() },
+        { id: '5', senderId: 'other', content: 'It\'s a tech company called "TechFlow". I want something modern and clean.', createdAt: new Date(Date.now() - 6400000).toISOString() },
+        { id: '6', senderId: 'me', content: 'Great! I can definitely help with that. I\'ll prepare some concepts for you.', createdAt: new Date(Date.now() - 3600000).toISOString() },
+        { id: '7', senderId: 'other', content: 'Thanks for the great work!', createdAt: new Date().toISOString() },
+      ],
+      '2': [
+        { id: '101', senderId: 'other', content: 'Hello, are you available for a website project?', createdAt: new Date(Date.now() - 8000000).toISOString() },
+        { id: '102', senderId: 'me', content: 'Yes, I am! What kind of website are you looking for?', createdAt: new Date(Date.now() - 7800000).toISOString() },
+        { id: '103', senderId: 'other', content: 'I need a portfolio site for my photography.', createdAt: new Date(Date.now() - 7600000).toISOString() },
+        { id: '104', senderId: 'other', content: 'Can you add some revisions?', createdAt: new Date(Date.now() - 3600000).toISOString() },
+      ],
+      '3': [
+        { id: '201', senderId: 'me', content: 'Hi Mike, I have a question about the backend integration.', createdAt: new Date(Date.now() - 90000000).toISOString() },
+        { id: '202', senderId: 'other', content: 'Sure, what do you need help with?', createdAt: new Date(Date.now() - 89000000).toISOString() },
+        { id: '203', senderId: 'me', content: 'I\m getting a 400 error on the login endpoint.', createdAt: new Date(Date.now() - 88000000).toISOString() },
+        { id: '204', senderId: 'other', content: 'When can you deliver?', createdAt: new Date(Date.now() - 86400000).toISOString() },
+      ]
+    };
 
-    setMessages(mockMessages);
+    const conversationMessages = allMockMessages[conversationId] || [];
+    setMessages(conversationMessages);
+
     const conv = conversations.find(c => c.id === conversationId);
     setActiveConversation(conv);
   };
