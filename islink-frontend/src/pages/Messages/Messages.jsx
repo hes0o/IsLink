@@ -47,7 +47,7 @@ function Messages() {
         relatedGig: null
       }
     ];
-    
+
     setConversations(mockConversations);
     setIsLoading(false);
   };
@@ -62,27 +62,28 @@ function Messages() {
       { id: '6', senderId: 'me', content: 'Great! I can definitely help with that. I\'ll prepare some concepts for you.', createdAt: new Date(Date.now() - 3600000).toISOString() },
       { id: '7', senderId: 'other', content: 'Thanks for the great work!', createdAt: new Date().toISOString() },
     ];
-    
+
     setMessages(mockMessages);
     const conv = conversations.find(c => c.id === conversationId);
     setActiveConversation(conv);
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    // Instant scroll to avoid fighting user scroll
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   };
 
   const handleSendMessage = (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
-    
+
     const newMsg = {
       id: Date.now().toString(),
       senderId: 'me',
       content: newMessage,
       createdAt: new Date().toISOString()
     };
-    
+
     setMessages(prev => [...prev, newMsg]);
     setNewMessage('');
   };
@@ -91,7 +92,7 @@ function Messages() {
     const date = new Date(dateString);
     const now = new Date();
     const diff = now - date;
-    
+
     if (diff < 60000) return 'Just now';
     if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
     if (diff < 86400000) return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -107,25 +108,25 @@ function Messages() {
             <h2>Messages</h2>
             <button className="btn-compose">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 5v14M5 12h14"/>
+                <path d="M12 5v14M5 12h14" />
               </svg>
             </button>
           </div>
-          
+
           <div className="conversations-search">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
             </svg>
             <input type="text" placeholder="Search messages..." />
           </div>
-          
+
           {isLoading ? (
             <div className="loading">Loading...</div>
           ) : (
             <div className="conversations">
               {conversations.map(conv => (
-                <div 
+                <div
                   key={conv.id}
                   className={`conversation-item ${activeConversation?.id === conv.id ? 'active' : ''}`}
                   onClick={() => loadMessages(conv.id)}
@@ -165,9 +166,9 @@ function Messages() {
                 <div className="chat-actions">
                   <button className="action-btn">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="1"/>
-                      <circle cx="19" cy="12" r="1"/>
-                      <circle cx="5" cy="12" r="1"/>
+                      <circle cx="12" cy="12" r="1" />
+                      <circle cx="19" cy="12" r="1" />
+                      <circle cx="5" cy="12" r="1" />
                     </svg>
                   </button>
                 </div>
@@ -188,19 +189,19 @@ function Messages() {
               <form className="chat-input" onSubmit={handleSendMessage}>
                 <button type="button" className="attach-btn">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
                   </svg>
                 </button>
-                <input 
-                  type="text" 
-                  placeholder="Type a message..." 
+                <input
+                  type="text"
+                  placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                 />
                 <button type="submit" className="send-btn" disabled={!newMessage.trim()}>
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="22" y1="2" x2="11" y2="13"/>
-                    <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    <line x1="22" y1="2" x2="11" y2="13" />
+                    <polygon points="22 2 15 22 11 13 2 9 22 2" />
                   </svg>
                 </button>
               </form>
@@ -209,7 +210,7 @@ function Messages() {
             <div className="no-conversation">
               <div className="empty-state">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
                 </svg>
                 <h3>Select a conversation</h3>
                 <p>Choose a conversation from the list to start chatting</p>

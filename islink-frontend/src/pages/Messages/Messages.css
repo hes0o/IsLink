@@ -261,11 +261,15 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  min-height: 0;
+  /* Critical for nested flex scrolling */
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1rem;
   background: #f8f9fa;
+  scroll-behavior: smooth;
+  /* Native smooth scrolling */
 }
 
 .message {
@@ -314,6 +318,8 @@
 
 /* Chat Input */
 .chat-input {
+  flex-shrink: 0;
+  /* Prevent input from being squashed */
   padding: 1rem 1.5rem;
   border-top: 1px solid var(--border-color);
   display: flex;
