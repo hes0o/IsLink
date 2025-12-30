@@ -8,6 +8,7 @@ import CreateGig from './pages/CreateGig';
 import { Login, Register } from './pages/Auth';
 import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
+import OrderDetails from './pages/Dashboard/OrderDetails';
 import Messages from './pages/Messages';
 import LinkerAI from './pages/LinkerAI';
 import NotFound from './pages/NotFound';
@@ -59,6 +60,11 @@ function App() {
         <Route path="dashboard" element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="orders/:orderId" element={
+          <ProtectedRoute>
+            <OrderDetails />
           </ProtectedRoute>
         } />
         <Route path="messages" element={

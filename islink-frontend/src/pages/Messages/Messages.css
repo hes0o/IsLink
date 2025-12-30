@@ -426,11 +426,11 @@
   .messages-container {
     grid-template-columns: 1fr;
   }
-  
+
   .conversations-list {
     display: none;
   }
-  
+
   .messages-container.show-list .conversations-list {
     display: flex;
     position: absolute;

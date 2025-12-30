@@ -67,7 +67,7 @@ function GigDetails() {
 
       if (response.success) {
         alert('🎉 Order placed successfully!');
-        navigate('/orders'); // Redirect to orders page
+        navigate('/dashboard?tab=orders'); // Redirect to dashboard orders tab
       } else {
         throw new Error(response.message || 'Failed to place order');
       }
