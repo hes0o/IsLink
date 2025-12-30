@@ -24,11 +24,16 @@ The platform relies on a **Hybrid Database Architecture**, leveraging the streng
 *   **ORM**: Entity Framework Core (EF Core)
 *   **Authentication**: JWT (JSON Web Tokens)
 *   **API Documentation**: Swagger / OpenAPI
+*   **AI Provider**: Groq API (Llama 3 Model)
 
-### Infrastructure & Database
-*   **Primary Database**: [PostgreSQL (Neon)](https://neon.tech/) - *Users, Orders, Gigs*
-*   **Messaging Database**: [MongoDB](https://www.mongodb.com/) - *Real-time Chat Logs*
-*   **Hosting**: Render (Backend), Vercel (Frontend)
+### Infrastructure & Deployment
+*   **Containerization**: [Docker](https://www.docker.com/) (Standardized Runtime Environment)
+*   **Hosting**:
+    *   **Backend**: Render (deployed via Docker)
+    *   **Frontend**: Vercel (Static Site Hosting)
+*   **Databases**:
+    *   **PostgreSQL**: Neon Tech (Serverless SQL)
+    *   **MongoDB**: MongoDB Atlas (Cloud NoSQL)
 
 ---
 
@@ -53,25 +58,39 @@ The frontend follows a **Service-Based Architecture** to ensure clean separation
 
 ## 4. Key Features
 
-### 🤖 LinkerAI
-An AI-powered concierge that guides users.
-*   **Function**: Users describe their needs in natural language (e.g., "I need a logo for a coffee shop").
-*   **Logic**: The AI analyzes the intent and recommends specific Categories or Gigs.
-*   **UX**: Features a ChatGPT-like streaming interface with "Starter Chips" for quick engagement.
+### 🤖 LinkerAI (Intelligent Matchmaker)
+An AI-powered concierge that guides users to the right services.
+*   **Model**: **Llama-3.3-70b-versatile** (via Groq API).
+*   **Why Groq?**: Chosen for its ultra-low latency, making the chat feel instant and conversational.
+*   **Logic**:
+    1.  **System Prompt**: Instructs the AI to act as a project manager.
+    2.  **Requirement Extraction**: Analyzes user text for "Budget", "Deadline", and "Project Type".
+    3.  **Semantic Search**: Matches extracted keywords against the Gig database.
 
 ### 🛒 Marketplace & Gigs
 *   **Search & Discovery**: Advanced filtering by category, price, and rating.
 *   **Gig Details**: Comprehensive service pages with pricing tiers, seller info, and reviews.
 *   **Order System**: Full lifecycle management (Placed -> In Progress -> Delivered -> Completed).
 
-### 💬 Real-Time Messaging
+### 💬 Real-Time Messaging & Chat
 *   **Inbox**: A centralized hub for all conversations.
 *   **Context Aware**: Chats are linked to specific Gigs ("Related Gig" tag), giving sellers context immediately.
 *   **Hybrid Backend**: Messages stored in MongoDB for speed, User profiles fetched from Postgres for accuracy.
 
 ---
 
-## 5. Database Schema Overview
+## 5. Deployment & DevOps
+
+### Docker Integration
+The backend is packaged using **Docker** to ensure consistency across environments.
+*   **Purpose**: "Build once, run anywhere." It bundles the .NET code, libraries, and runtime into a single "Create" (Image).
+*   **Dockerfile Strategy**: Uses a "Multi-Stage Build":
+    1.  **Build Stage**: Uses the heavy SDK image to compile the C# code.
+    2.  **Runtime Stage**: Copies *only* the compiled files to a lightweight Runtime image, keeping the final deployment small and secure.
+
+---
+
+## 6. Database Schema Overview
 
 ### PostgreSQL Entities (Core)
 *   **User**: `Id`, `Username`, `Email`, `PasswordHash`, `Role`, `Balance`
@@ -82,22 +101,6 @@ An AI-powered concierge that guides users.
 ### MongoDB Collections (Chat)
 *   **Conversations**: `_id`, `Participants[]`, `LastMessage`, `UpdatedAt`
 *   **Messages**: `_id`, `ConversationId`, `SenderId`, `Content`, `Timestamp`
-
----
-
-## 6. Design System
-IsLink implements a custom design system focused on **Visual Hierarchy** and **Modern Aesthetics**.
-
-*   **Colors**:
-    *   Primary: `Emerald Green (#1dbf73)` - Representative of growth and money.
-    *   Neutral: `Slate Gray (#0f172a)` - Professional, high-contrast text.
-*   **Typography**:
-    *   Headings: *Plus Jakarta Sans* (Geometric, Modern)
-    *   Body: *Inter* (Clean, Readable)
-*   **Components**:
-    *   Glassmorphism Headers
-    *   Soft Shadow Cards
-    *   Fluid Responsive Layouts (Mobile -> Desktop)
 
 ---
 

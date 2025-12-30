@@ -9,7 +9,7 @@ function Messages() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
 
   useEffect(() => {
     loadConversations();
@@ -69,8 +69,10 @@ function Messages() {
   };
 
   const scrollToBottom = () => {
-    // Instant scroll to avoid fighting user scroll
-    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+    if (chatContainerRef.current) {
+      const { scrollHeight, clientHeight } = chatContainerRef.current;
+      chatContainerRef.current.scrollTop = scrollHeight - clientHeight;
+    }
   };
 
   const handleSendMessage = (e) => {
@@ -174,7 +176,7 @@ function Messages() {
                 </div>
               </div>
 
-              <div className="chat-messages">
+              <div className="chat-messages" ref={chatContainerRef}>
                 {messages.map(msg => (
                   <div key={msg.id} className={`message ${msg.senderId === 'me' ? 'sent' : 'received'}`}>
                     <div className="message-bubble">
@@ -183,7 +185,6 @@ function Messages() {
                     </div>
                   </div>
                 ))}
-                <div ref={messagesEndRef} />
               </div>
 
               <form className="chat-input" onSubmit={handleSendMessage}>
