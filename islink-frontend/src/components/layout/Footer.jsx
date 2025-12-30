@@ -132,6 +132,9 @@ function Footer() {
           </div>
         </div>
       </div>
+      <div className="debug-footer" style={{ textAlign: 'center', fontSize: '10px', color: '#666', padding: '10px 0' }}>
+        Backend: <code>{import.meta.env.VITE_API_URL || 'Using Localhost Fallback'}</code>
+      </div>
     </footer>
   );
 }
