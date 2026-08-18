@@ -1,88 +1,38 @@
-ISLINK
+# 🔗 IsLink
 
-Connecting Talent, Empowering Dreams Seamlessly
+> Connecting Talent, Empowering Dreams Seamlessly.
 
-last-commit repo-top-language repo-language-count
-Built with the tools and technologies:
+---
 
-JSON Markdown npm JavaScript GNU%20Bash
-React Docker NuGet Vite
+## 1. Overview
+IsLink is an all-in-one freelance marketplace platform connecting Freelancers (Sellers) with Clients (Buyers)[cite: 2, 3]. It bridges freelancers and clients across diverse service categories, streamlining interactions and transactions. The platform differentiates itself with **LinkerAI**, an intelligent AI assistant that helps users define their project requirements and matches them with the perfect services[cite: 2]. 
 
-Table of Contents
+## 2. Key Features
+*   **🤖 LinkerAI (Intelligent Matchmaker):** Leverages the Groq API (Llama-3.3-70b-versatile model) for intelligent project recommendations and requirement extraction[cite: 2, 3].
+*   **🛒 Marketplace & Gigs:** Provides comprehensive service pages with pricing tiers, seller info, reviews, and full lifecycle order management (Placed -> In Progress -> Delivered -> Completed)[cite: 2].
+*   **💬 Real-Time Messaging & Chat:** Ensures seamless communication with a centralized inbox linked to specific gigs, utilizing MongoDB for speed and PostgreSQL for user profile accuracy[cite: 2, 3].
+*   **🔒 Secure Transactions:** Facilitates trustworthy transactions and transparent feedback, protected by stateless JWT authentication and BCrypt/Argon2 password hashing[cite: 2, 3].
 
-Overview
-Getting Started
-Prerequisites
-Installation
-Usage
-Testing
-Overview
+## 3. Tech Stack & Architecture
+IsLink features a modular architecture that supports scalable development with a clear separation of frontend and backend components.
 
-IsLink is an all-in-one platform that bridges freelancers and clients across diverse service categories, streamlining interactions and transactions. Its architecture combines a modern React frontend with a powerful .NET backend, supporting real-time communication, AI-driven features, and secure payments.
+*   **Frontend (Client-Side):** React 18, Vite, JavaScript (ES6+), Vanilla CSS3 (Zero-Dependency), React Router DOM v6, and Context API[cite: 2, 3]. Hosted on Vercel[cite: 2].
+*   **Backend (Server-Side):** .NET 8 / ASP.NET Core Web API, C#, Entity Framework Core (EF Core), Swagger / OpenAPI, and NuGet[cite: 2, 3]. Hosted on Render via Docker[cite: 2].
+*   **Hybrid Database Strategy:**
+    *   **PostgreSQL (Neon Tech):** Used for ACID-compliant transactional data such as financials (Orders), user accounts, and relational service data[cite: 2].
+    *   **MongoDB (MongoDB Atlas):** Used for flexible, high-volume, unstructured, and time-series based chat communications[cite: 2].
+*   **Infrastructure:** Docker containerization utilizing a multi-stage build strategy, which uses a heavy SDK image to compile C# code and copies only the compiled files to a lightweight runtime image[cite: 2, 3].
 
-Why IsLink?
+## 4. Getting Started
 
-This project enables developers to build scalable, feature-rich freelance marketplaces. The core features include:
+### Prerequisites
+This project requires the following dependencies[cite: 3]:
+*   **Programming Language:** CSharp[cite: 3]
+*   **Package Managers:** Npm, Nuget[cite: 3]
+*   **Container Runtime:** Docker[cite: 3]
 
-🧩 🎯 Modular Architecture: Supports scalable development with clear separation of frontend and backend components.
-🛠️ 🔒 Secure Payments & Reviews: Facilitates trustworthy transactions and transparent feedback.
-🤖 🧠 AI Integration: Leverages Groq AI for intelligent link management and project recommendations.
-💬 🌐 Real-Time Messaging: Ensures seamless communication with real-time chat and notifications.
-🚀 Fast Development Setup: Utilizes Vite, ESLint, and TypeScript for rapid, maintainable frontend development.
-Getting Started
-
-Prerequisites
-
-This project requires the following dependencies:
-
-Programming Language: CSharp
-Package Manager: Npm, Nuget
-Container Runtime: Docker
-Installation
-
-Build IsLink from the source and install dependencies:
-
-Clone the repository:
-
-❯ git clone https://github.com/hes0o/IsLink
-Navigate to the project directory:
-
-❯ cd IsLink
-Install the dependencies:
-
-Using docker:
-
-❯ docker build -t hes0o/IsLink .
-Using npm:
-
-❯ npm install
-Using nuget:
-
-❯ dotnet restore
-Usage
-
-Run the project with:
-
-Using docker:
-
-docker run -it {image_name}
-Using npm:
-
-npm start
-Using nuget:
-
-dotnet run
-Testing
-
-Islink uses the {test_framework} test framework. Run the test suite with:
-
-Using docker:
-
-echo 'INSERT-TEST-COMMAND-HERE'
-Using npm:
-
-npm test
-Using nuget:
-
-dotnet test
-⬆ Return
+### Installation & Usage
+Clone the repository and navigate to the project directory[cite: 3]:
+```bash
+git clone [https://github.com/hes0o/IsLink](https://github.com/hes0o/IsLink)
+cd IsLink
