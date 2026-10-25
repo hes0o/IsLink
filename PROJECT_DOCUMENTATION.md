@@ -1,5 +1,7 @@
 # IsLink Project Documentation
 
+> Up-to-date technical docs are in [docs/](docs/). This file is the original project write-up.
+
 ## 1. Executive Summary
 **IsLink** is a modern freelance marketplace platform connecting Freelancers (Sellers) with Clients (Buyers). It differentiates itself with **LinkerAI**, an intelligent AI assistant that helps users define their project requirements and matches them with the perfect services.
 
@@ -106,6 +108,6 @@ The backend is packaged using **Docker** to ensure consistency across environmen
 
 ## 7. Security Measures
 *   **JWT Authentication**: Stateless, secure token-based auth.
-*   **Password Hashing**: BCrypt/Argon2 hashing for user passwords.
-*   **CORS Policy**: Strict Cross-Origin policies allowing only trusted domains (Vercel Frontend).
-*   **Environment Variables**: Sensitive keys (DB Strings, API Keys) managed via `.env` and Cloud Configs.
+*   **Password Hashing**: BCrypt hashing for user passwords.
+*   **CORS Policy**: Allows `localhost`, `*.vercel.app` and `*.onrender.com` origins (see [docs/architecture.md](docs/architecture.md#security)).
+*   **Configuration**: Connection strings and API keys belong in user secrets locally and environment variables in production (see [docs/setup.md](docs/setup.md#configuration)).

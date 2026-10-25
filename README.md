@@ -1,38 +1,104 @@
 # 🔗 IsLink
 
-> Connecting Talent, Empowering Dreams Seamlessly.
+> Connecting talent, empowering dreams. A freelance marketplace where clients find and hire freelancers, with **LinkerAI**, an assistant that turns a project idea into a shortlist of matching services.
+
+🇹🇷 [Türkçe README](README.tr.md) · 📚 [Documentation](docs/)
 
 ---
 
-## 1. Overview
-IsLink is an all-in-one freelance marketplace platform connecting Freelancers (Sellers) with Clients (Buyers). It bridges freelancers and clients across diverse service categories, streamlining interactions and transactions. The platform differentiates itself with **LinkerAI**, an intelligent AI assistant that helps users define their project requirements and matches them with the perfect services. 
+## Features
 
-## 2. Key Features
-*   **🤖 LinkerAI (Intelligent Matchmaker):** Leverages the Groq API (Llama-3.3-70b-versatile model) for intelligent project recommendations and requirement extraction.
-*   **🛒 Marketplace & Gigs:** Provides comprehensive service pages with pricing tiers, seller info, reviews, and full lifecycle order management (Placed -> In Progress -> Delivered -> Completed).
-*   **💬 Real-Time Messaging & Chat:** Ensures seamless communication with a centralized inbox linked to specific gigs, utilizing MongoDB for speed and PostgreSQL for user profile accuracy.
-*   **🔒 Secure Transactions:** Facilitates trustworthy transactions and transparent feedback, protected by stateless JWT authentication and BCrypt/Argon2 password hashing.
+- **LinkerAI matchmaker.** A chat assistant (Groq, `llama-3.3-70b-versatile`) asks about the project until it knows the project type, budget and deadline, then recommends gigs that fit the budget. Chat history is saved per user.
+- **Marketplace.** Gigs with categories, tags, image galleries and Basic / Standard / Premium packages; search and filters by category, price and delivery time; seller profiles with skills, languages and ratings.
+- **Orders.** Buyers order a gig package, sellers deliver, buyers accept or ask for a revision: `pending → in_progress → delivered → completed`, with `revision_requested` and `cancelled` branches.
+- **Reviews.** Buyers rate completed orders (1–5) and sellers can reply.
+- **Messaging and notifications.** Inbox with conversations that can be tied to a gig, plus in-app notifications, stored in MongoDB.
+- **Accounts.** Register as buyer or seller, JWT sign-in, BCrypt password hashing.
 
-## 3. Tech Stack & Architecture
-IsLink features a modular architecture that supports scalable development with a clear separation of frontend and backend components.
+## Tech stack
 
-*   **Frontend (Client-Side):** React 18, Vite, JavaScript (ES6+), Vanilla CSS3 (Zero-Dependency), React Router DOM v6, and Context API. Hosted on Vercel.
-*   **Backend (Server-Side):** .NET 8 / ASP.NET Core Web API, C#, Entity Framework Core (EF Core), Swagger / OpenAPI, and NuGet. Hosted on Render via Docker.
-*   **Hybrid Database Strategy:**
-    *   **PostgreSQL (Neon Tech):** Used for ACID-compliant transactional data such as financials (Orders), user accounts, and relational service data.
-    *   **MongoDB (MongoDB Atlas):** Used for flexible, high-volume, unstructured, and time-series based chat communications.
-*   **Infrastructure:** Docker containerization utilizing a multi-stage build strategy, which uses a heavy SDK image to compile C# code and copies only the compiled files to a lightweight runtime image.
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, Vite 6, React Router 7, Context API, plain CSS. Hosted on Vercel. |
+| Backend | .NET 8, ASP.NET Core Web API, EF Core 8, AutoMapper, Swagger. Hosted on Render (Docker). |
+| Databases | PostgreSQL (Neon) for users, gigs, orders, reviews and AI chat history; MongoDB (Atlas) for messages and notifications |
+| AI | Groq API (OpenAI-compatible chat completions) |
+| Auth | JWT bearer tokens, BCrypt.Net |
+| Tests | xUnit + `WebApplicationFactory` with an in-memory database |
 
-## 4. Getting Started
+## Architecture
 
-### Prerequisites
-This project requires the following dependencies:
-*   **Programming Language:** CSharp
-*   **Package Managers:** Npm, Nuget
-*   **Container Runtime:** Docker
+```
+React SPA (Vercel)  ──fetch──►  ASP.NET Core API (Render, Docker)
+                                   │          │            │
+                                   ▼          ▼            ▼
+                           PostgreSQL     MongoDB      Groq API
+                           (EF Core)      (driver)     (LinkerAI)
+```
 
-### Installation & Usage
-Clone the repository and navigate to the project directory:
+Details, including the data model and LinkerAI flow: [docs/architecture.md](docs/architecture.md).
+
+## Quickstart
+
+You need the .NET 8 SDK, Node.js 18+, a PostgreSQL database, and optionally MongoDB and a Groq API key.
+
+### Backend
+
 ```bash
-git clone [https://github.com/hes0o/IsLink](https://github.com/hes0o/IsLink)
-cd IsLink
+git clone https://github.com/hes0o/IsLink.git
+cd IsLink/islink-backend/IsLink.API
+
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:PostgreSQL" "Host=localhost;Database=islink;Username=postgres;Password=postgres"
+dotnet user-secrets set "ConnectionStrings:MongoDB" "mongodb://localhost:27017"
+dotnet user-secrets set "JwtSettings:Secret" "<at least 32 random characters>"
+dotnet user-secrets set "Groq:ApiKey" "<your Groq key>"
+
+dotnet run --urls http://localhost:5001
+```
+
+Swagger: http://localhost:5001/swagger
+
+> [!WARNING]
+> On every start, unless `SKIP_DB_INIT=true` is set, the API runs migrations and then `DbSeeder`, which **deletes all users, gigs, orders, reviews, transactions and categories** and re-creates demo data. Point it only at a throwaway database, and set `SKIP_DB_INIT=true` anywhere real data lives. See [docs/setup.md](docs/setup.md#database-initialization).
+
+### Frontend
+
+```bash
+cd IsLink/islink-frontend
+npm install
+npm run dev            # http://localhost:5173
+```
+
+The frontend calls `http://localhost:5001/api` unless `VITE_API_URL` is set.
+
+Full setup, configuration keys, Docker and deployment: [docs/setup.md](docs/setup.md).
+
+## Documentation
+
+| Document | Contents |
+| --- | --- |
+| [docs/architecture.md](docs/architecture.md) | Components, hybrid database, data model, LinkerAI, order lifecycle, security |
+| [docs/api.md](docs/api.md) | Every endpoint, auth, request examples |
+| [docs/setup.md](docs/setup.md) | Configuration, local run, tests, Docker, Render and Vercel deployment |
+| [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md) | Original project write-up |
+
+## Project structure
+
+```
+islink-backend/
+├── IsLink.API/
+│   ├── Controllers/     Auth, Users, Gigs, Categories, Orders, Reviews, Messages, Notifications, LinkerAI
+│   ├── Services/        business logic, one interface + class per area
+│   ├── Data/            EF Core DbContext and seeders
+│   ├── Models/          Entities (PostgreSQL), MongoDB documents, DTOs
+│   ├── Migrations/      EF Core migrations
+│   ├── Middleware/      global exception handler
+│   └── Dockerfile
+└── IsLink.API.Tests/    LinkerAI endpoint tests
+islink-frontend/
+├── src/pages/           Home, Gigs, GigDetails, CreateGig, Dashboard, OrderDetails, Messages, Profile, LinkerAI, Auth
+├── src/components/      layout, gig cards, error boundary
+├── src/services/api.js  all HTTP calls
+└── src/context/         AuthContext
+```
