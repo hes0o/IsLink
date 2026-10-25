@@ -48,7 +48,6 @@ You need the .NET 8 SDK, Node.js 18+, a PostgreSQL database, and optionally Mong
 git clone https://github.com/hes0o/IsLink.git
 cd IsLink/islink-backend/IsLink.API
 
-dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:PostgreSQL" "Host=localhost;Database=islink;Username=postgres;Password=postgres"
 dotnet user-secrets set "ConnectionStrings:MongoDB" "mongodb://localhost:27017"
 dotnet user-secrets set "JwtSettings:Secret" "<at least 32 random characters>"
@@ -59,8 +58,7 @@ dotnet run --urls http://localhost:5001
 
 Swagger: http://localhost:5001/swagger
 
-> [!WARNING]
-> On every start, unless `SKIP_DB_INIT=true` is set, the API runs migrations and then `DbSeeder`, which **deletes all users, gigs, orders, reviews, transactions and categories** and re-creates demo data. Point it only at a throwaway database, and set `SKIP_DB_INIT=true` anywhere real data lives. See [docs/setup.md](docs/setup.md#database-initialization).
+On startup the API applies EF Core migrations and, only if the database is empty, adds demo categories, users and gigs. Existing data is never modified. Set `SKIP_DB_INIT=true` to skip both.
 
 ### Frontend
 

@@ -48,7 +48,6 @@ Veri modeli ve LinkerAI akışı dahil ayrıntılar: [docs/architecture.tr.md](d
 git clone https://github.com/hes0o/IsLink.git
 cd IsLink/islink-backend/IsLink.API
 
-dotnet user-secrets init
 dotnet user-secrets set "ConnectionStrings:PostgreSQL" "Host=localhost;Database=islink;Username=postgres;Password=postgres"
 dotnet user-secrets set "ConnectionStrings:MongoDB" "mongodb://localhost:27017"
 dotnet user-secrets set "JwtSettings:Secret" "<en az 32 rastgele karakter>"
@@ -59,8 +58,7 @@ dotnet run --urls http://localhost:5001
 
 Swagger: http://localhost:5001/swagger
 
-> [!WARNING]
-> `SKIP_DB_INIT=true` ayarlanmadıkça API her başlangıçta migration'ları ve ardından `DbSeeder`'ı çalıştırır; bu da **tüm kullanıcıları, gig'leri, siparişleri, değerlendirmeleri, işlemleri ve kategorileri siler** ve demo verisini yeniden oluşturur. API'yi yalnızca silinebilir bir veritabanına bağlayın ve gerçek verinin olduğu her ortamda `SKIP_DB_INIT=true` ayarlayın. Bkz. [docs/setup.tr.md](docs/setup.tr.md#veritabanı-başlatma).
+API başlangıçta EF Core migration'larını uygular ve yalnızca veritabanı boşsa demo kategori, kullanıcı ve gig'leri ekler. Mevcut veriye asla dokunulmaz. İkisini de atlamak için `SKIP_DB_INIT=true` ayarlayın.
 
 ### Frontend
 

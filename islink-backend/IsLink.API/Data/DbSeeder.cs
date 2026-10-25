@@ -9,10 +9,6 @@ public static class DbSeeder
     {
         Console.WriteLine("🌱 Starting database seeding process...");
         
-        // Clear existing data to ensure fresh seed
-        Console.WriteLine("🧹 Clearing existing seed data...");
-        Console.WriteLine("!!! FORCE SEEDING ACTIVE - WIPING DATA !!!");
-
         // FIX: Ensure ChatSessions has Title column (Migration workaround for existing DBs)
         try 
         {
@@ -33,58 +29,12 @@ public static class DbSeeder
              Console.WriteLine($"⚠️ Schema update note (ignore if new DB): {ex.Message}");
         }
         
-        // Clear in proper order to respect foreign keys
-        if (await context.Reviews.AnyAsync())
+        // Seed demo data only into an empty database; never touch existing data.
+        if (await context.Users.AnyAsync() || await context.Categories.AnyAsync())
         {
-            context.Reviews.RemoveRange(await context.Reviews.ToListAsync());
-            await context.SaveChangesAsync();
+            Console.WriteLine("ℹ️ Database already has data, skipping demo seed.");
+            return;
         }
-        
-        if (await context.Orders.AnyAsync())
-        {
-            context.Orders.RemoveRange(await context.Orders.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        if (await context.Transactions.AnyAsync())
-        {
-            context.Transactions.RemoveRange(await context.Transactions.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        if (await context.Gigs.AnyAsync())
-        {
-            context.Gigs.RemoveRange(await context.Gigs.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        // Clear user skills and languages (cascade delete will handle this, but being explicit)
-        if (await context.UserSkills.AnyAsync())
-        {
-            context.UserSkills.RemoveRange(await context.UserSkills.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        if (await context.UserLanguages.AnyAsync())
-        {
-            context.UserLanguages.RemoveRange(await context.UserLanguages.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        if (await context.Users.AnyAsync())
-        {
-            context.Users.RemoveRange(await context.Users.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        // Clear existing categories to re-seed properly
-        if (await context.Categories.AnyAsync())
-        {
-            context.Categories.RemoveRange(await context.Categories.ToListAsync());
-            await context.SaveChangesAsync();
-        }
-        
-        Console.WriteLine("✅ Existing data cleared");
 
         Console.WriteLine("🌱 Seeding database with comprehensive test data...");
 

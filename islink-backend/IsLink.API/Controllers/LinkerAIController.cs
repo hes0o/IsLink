@@ -186,10 +186,12 @@ public class LinkerAIController : ControllerBase
     [HttpGet("status")]
     public ActionResult GetStatus()
     {
-        var groqKey =
-            _configuration["Groq:ApiKey"] ??
-            Environment.GetEnvironmentVariable("Groq__ApiKey") ??
-            Environment.GetEnvironmentVariable("GROQ_API_KEY");
+        var groqKey = new[]
+            {
+                _configuration["Groq:ApiKey"],
+                Environment.GetEnvironmentVariable("Groq__ApiKey"),
+                Environment.GetEnvironmentVariable("GROQ_API_KEY"),
+            }.FirstOrDefault(k => !string.IsNullOrWhiteSpace(k));
 
         return Ok(new
         {

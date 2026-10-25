@@ -40,7 +40,8 @@ else
 builder.Services.AddSingleton<IMongoClient>(sp =>
 {
     // Use a safe default so the API can boot even if MongoDB conn string is missing in some environments.
-    var mongoConn = builder.Configuration.GetConnectionString("MongoDB") ?? "mongodb://localhost:27017";
+    var mongoConn = builder.Configuration.GetConnectionString("MongoDB");
+    if (string.IsNullOrWhiteSpace(mongoConn)) mongoConn = "mongodb://localhost:27017";
     return new MongoClient(mongoConn);
 });
 

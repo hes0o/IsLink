@@ -118,6 +118,13 @@ public sealed class FakeLinkerAIService : ILinkerAIService
         // In this fake, recommendations are returned as part of chat response.
         return Task.FromResult<LinkerAIRecommendations?>(null);
     }
+
+    public Task<LinkerAIChatResponse?> GetActiveSessionAsync(string userId)
+        => Task.FromResult<LinkerAIChatResponse?>(null);
+
+    public Task<List<ChatSessionDto>> GetUserSessionsAsync(string userId)
+        => Task.FromResult(new List<ChatSessionDto>());
+
+    public Task<ChatSessionDetailDto?> GetSessionAsync(string sessionId, string userId)
+        => Task.FromResult<ChatSessionDetailDto?>(null);
 }
-
-

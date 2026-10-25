@@ -26,11 +26,10 @@ The API reads standard ASP.NET Core configuration: `appsettings.json`, then `app
 | — | `ASPNETCORE_URLS` | e.g. `http://localhost:5001` |
 | — | `ASPNETCORE_ENVIRONMENT` | `Development`, `Production`, or `Test` (in-memory DB, no seeding) |
 
-**Don't commit secrets.** Keep real values in user secrets locally and in the host's environment settings in production, and leave placeholders in `appsettings.json`.
+**Don't commit secrets.** Keep real values in user secrets locally and in the host's environment settings in production, `appsettings.json` ships with empty connection strings and API keys, and the project already has a `UserSecretsId`.
 
 ```bash
 cd islink-backend/IsLink.API
-dotnet user-secrets init          # adds a UserSecretsId to the .csproj, once
 dotnet user-secrets set "ConnectionStrings:PostgreSQL" "Host=localhost;Database=islink;Username=postgres;Password=postgres"
 dotnet user-secrets set "ConnectionStrings:MongoDB" "mongodb://localhost:27017"
 dotnet user-secrets set "JwtSettings:Secret" "<at least 32 random characters>"
@@ -51,17 +50,16 @@ docker run -d --name islink-mongo -p 27017:27017 mongo:7
 At startup, unless `ASPNETCORE_ENVIRONMENT=Test` or `SKIP_DB_INIT=true`, `Program.cs`:
 
 1. runs `Database.MigrateAsync()`, then
-2. runs `DbSeeder.SeedAsync()`, which **deletes every review, order, transaction, gig, user skill, user language, user and category**, then inserts demo categories, users and gigs.
+2. runs `DbSeeder.SeedAsync()`, which patches two `ChatSessions` columns if needed and, **only when there are no users and no categories yet**, inserts demo categories, users and gigs. Existing data is never changed or deleted.
 
 Failures in either step are logged and don't stop the API.
 
-> [!CAUTION]
-> Because of step 2, restarting or redeploying the API wipes real data. Set `SKIP_DB_INIT=true` on any environment whose data you want to keep, and run migrations yourself:
->
-> ```bash
-> dotnet tool install --global dotnet-ef
-> dotnet ef database update --project islink-backend/IsLink.API
-> ```
+To run migrations yourself instead (for example with `SKIP_DB_INIT=true` in production):
+
+```bash
+dotnet tool install --global dotnet-ef
+dotnet ef database update --project islink-backend/IsLink.API
+```
 
 The demo users' emails and password are in `Data/DbSeeder.cs`.
 
@@ -87,7 +85,7 @@ cd islink-backend
 dotnet test
 ```
 
-`IsLink.API.Tests` boots the API with `WebApplicationFactory` in the `Test` environment (in-memory database) and swaps in `FakeLinkerAIService`, so the LinkerAI endpoint tests need no network. `RealLinkerAISmokeTests` is skipped unless `RUN_REAL_LINKERAI_SMOKE` is set; it still looks for a Gemini key from before the switch to Groq.
+`IsLink.API.Tests` boots the API with `WebApplicationFactory` in the `Test` environment (in-memory database) and swaps in `FakeLinkerAIService`, so the LinkerAI endpoint tests need no network. Those three tests currently fail with `401` because `LinkerAIController` now requires a JWT and the tests don't send one. `DbSeederTests` checks that seeding only fills an empty database. `RealLinkerAISmokeTests` is skipped unless `RUN_REAL_LINKERAI_SMOKE` is set; it still looks for a Gemini key from before the switch to Groq.
 
 ## Docker
 
@@ -107,7 +105,7 @@ The image is a multi-stage build (SDK to compile, ASP.NET runtime to run) listen
 
 ## Deployment
 
-**Backend on Render:** create a Web Service from the repo with root directory `islink-backend/IsLink.API` and the Docker runtime. Add the environment variables above in the Render dashboard, including `SKIP_DB_INIT=true` once real users exist.
+**Backend on Render:** create a Web Service from the repo with root directory `islink-backend/IsLink.API` and the Docker runtime. Add the environment variables above in the Render dashboard. `appsettings.json` has no connection strings or keys, so `ConnectionStrings__PostgreSQL`, `ConnectionStrings__MongoDB`, `JwtSettings__Secret` and `Groq__ApiKey` must be set there.
 
 **Frontend on Vercel:** import the repo with root directory `islink-frontend` (Vite preset, build `npm run build`, output `dist`). Set `VITE_API_URL` to `https://<your-render-service>.onrender.com/api`. `vercel.json` already rewrites all paths to the SPA.
 
@@ -121,4 +119,3 @@ The image is a multi-stage build (SDK to compile, ASP.NET runtime to run) listen
 | Frontend can't reach the API | Port mismatch: the frontend defaults to 5001, while `dotnet run` without `--urls` may pick another port. |
 | CORS error from a custom domain | Add the domain to the `AllowFrontend` policy in `Program.cs`. |
 | `⚠️ Database initialization warning` in logs | Migration or seed failed; check the PostgreSQL connection string. The API keeps running. |
-| All my data vanished after a deploy | See [Database initialization](#database-initialization). |

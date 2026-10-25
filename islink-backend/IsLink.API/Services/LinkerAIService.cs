@@ -28,10 +28,12 @@ public class LinkerAIService : ILinkerAIService
         _httpClient = httpClientFactory.CreateClient();
         
         // Groq API key
-        _groqApiKey = configuration["Groq:ApiKey"]
-            ?? Environment.GetEnvironmentVariable("Groq__ApiKey")
-            ?? Environment.GetEnvironmentVariable("GROQ_API_KEY")
-            ?? "";
+        _groqApiKey = new[]
+            {
+                configuration["Groq:ApiKey"],
+                Environment.GetEnvironmentVariable("Groq__ApiKey"),
+                Environment.GetEnvironmentVariable("GROQ_API_KEY"),
+            }.FirstOrDefault(k => !string.IsNullOrWhiteSpace(k)) ?? "";
         
         if (string.IsNullOrWhiteSpace(_groqApiKey))
         {
